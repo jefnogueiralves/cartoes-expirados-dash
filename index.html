@@ -2616,7 +2616,8 @@ function updateKPIs() {
   const dRei = kpi.prevRei ? ((kpi.lastRei-kpi.prevRei)/kpi.prevRei*100).toFixed(1) : null;
   const dDm  = kpi.prevDm  ? (kpi.lastDm-kpi.prevDm).toFixed(1) : null;
 
-  setDelta('kpi-delta-total', '▲ acumulado meses completos', true);
+  const pctRenovG1 = kpi.totalTelG1 ? (totalAll / kpi.totalTelG1 * 100).toFixed(1) + '% de renovação' : '—';
+  setDelta('kpi-delta-total', pctRenovG1, kpi.totalTelG1 > 0);
   setDelta('kpi-delta-renov', dRen!==null?(dRen>0?'▲ ':'▼ ')+Math.abs(dRen)+'% M/M':'—', dRen===null||dRen>=0);
   setDelta('kpi-delta-reimis', dRei!==null?(dRei<0?'▼ ':'▲ ')+Math.abs(dRei)+'% M/M':'—', dRei===null||dRei<=0);
   setDelta('kpi-delta-dias',   dDm!==null?(dDm<0?'▼ ':'▲ ')+Math.abs(dDm)+'d M/M':'—', dDm===null||dDm<=0);
