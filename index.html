@@ -1,0 +1,3134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cartões Expirados Físicos — Histórico de Renovações</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <style>
+    :root {
+      --yellow: #FFE600;
+      --yellow-dark: #E0CC00;
+      --blue:   #009EE3;
+      --blue-dark: #0077B5;
+      --green:  #00A650;
+      --red:    #FF3B30;
+      --orange: #FF6B00;
+      --bg:     #F5F5F5;
+      --card:   #FFFFFF;
+      --text:   #1A1A1A;
+      --muted:  #666666;
+      --border: #E0E0E0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: #1A1A1A;
+      color: #fff;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 4px solid var(--yellow);
+    }
+    header .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header .logo-badge {
+      background: var(--yellow);
+      color: #1A1A1A;
+      font-weight: 800;
+      font-size: 15px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      letter-spacing: -0.5px;
+    }
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    header .meta {
+      font-size: 13px;
+      color: #aaa;
+      text-align: right;
+    }
+    header .meta strong { color: var(--yellow); }
+
+    /* ── TABS ── */
+    .tabs {
+      background: #222;
+      display: flex;
+      gap: 2px;
+      padding: 0 32px;
+      border-bottom: 2px solid #333;
+    }
+    .tab-btn {
+      background: transparent;
+      color: #bbb;
+      border: none;
+      padding: 13px 22px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all .2s;
+      letter-spacing: .3px;
+    }
+    .tab-btn:hover { color: #fff; }
+    .tab-btn.active { color: var(--yellow); border-bottom-color: var(--yellow); }
+
+    /* ── MAIN ── */
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px 32px;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── KPI CARDS ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .kpi-card {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.09); }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+    }
+    .kpi-card.yellow::before { background: var(--yellow); }
+    .kpi-card.blue::before   { background: var(--blue); }
+    .kpi-card.green::before  { background: var(--green); }
+    .kpi-card.orange::before { background: var(--orange); }
+    .kpi-card.red::before    { background: var(--red); }
+
+    .kpi-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .kpi-sub {
+      font-size: 10.5px;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+    .kpi-delta {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 20px;
+      margin-top: 5px;
+    }
+    .kpi-delta.up   { background: #e8f7ef; color: var(--green); }
+    .kpi-delta.down { background: #fff0ee; color: var(--red); }
+
+    /* ── CHART SECTIONS ── */
+    .chart-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .chart-row.full { grid-template-columns: 1fr; }
+    .chart-row.two  { grid-template-columns: 1fr 1fr; }
+
+    .chart-card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 22px 24px;
+    }
+    .chart-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: -.2px;
+    }
+    .chart-card .chart-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    /* ── INSIGHTS ── */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .insight-card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .insight-icon {
+      font-size: 26px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .insight-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    .insight-text {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .insight-card.alert { border-left: 4px solid var(--red); }
+    .insight-card.good  { border-left: 4px solid var(--green); }
+    .insight-card.info  { border-left: 4px solid var(--blue); }
+    .insight-card.warn  { border-left: 4px solid var(--orange); }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title .badge {
+      background: var(--yellow);
+      color: #1A1A1A;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead tr { background: #F0F0F0; }
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    tr:hover td { background: #FAFAFA; }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .pill.green { background: #e8f7ef; color: var(--green); }
+    .pill.blue  { background: #e3f4fc; color: var(--blue); }
+    .pill.red   { background: #fff0ee; color: var(--red); }
+    .pill.orange{ background: #fff3e6; color: var(--orange); }
+
+    /* ── FOOTER NOTE ── */
+    .footer-note {
+      background: #fffbe6;
+      border: 1px solid #ffe066;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: #7a6300;
+      margin-top: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+    .filter-bar label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .filter-bar select {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 12px;
+      font-size: 13px;
+      background: #fff;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .filter-bar select:focus { outline: 2px solid var(--blue); }
+
+    /* ── SLIDE PREVIEW ── */
+    .slide-preview {
+      background: #1A1A1A;
+      border-radius: 16px;
+      padding: 40px 48px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      min-height: 520px;
+    }
+    .slide-preview::before {
+      content: '';
+      position: absolute;
+      bottom: -60px; right: -60px;
+      width: 300px; height: 300px;
+      background: var(--yellow);
+      opacity: .04;
+      border-radius: 50%;
+    }
+    .slide-heading {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--yellow);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+    .slide-title {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 32px;
+      letter-spacing: -.5px;
+    }
+    .slide-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 36px;
+    }
+    .slide-kpi {
+      background: rgba(255,255,255,.06);
+      border-radius: 10px;
+      padding: 18px 20px;
+      border: 1px solid rgba(255,255,255,.1);
+    }
+    .slide-kpi .s-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+    .slide-kpi .s-value {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .slide-kpi .s-value.yellow { color: var(--yellow); }
+    .slide-kpi .s-value.blue   { color: #5bc8f5; }
+    .slide-kpi .s-value.green  { color: #4dd896; }
+    .slide-kpi .s-delta {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 5px;
+    }
+    .slide-chart-area {
+      background: rgba(255,255,255,.04);
+      border-radius: 10px;
+      padding: 20px;
+      position: relative;
+    }
+    .slide-bar-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 90px;
+      margin-bottom: 6px;
+    }
+    .slide-bar-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      gap: 2px;
+    }
+    .slide-bar {
+      width: 100%;
+      border-radius: 3px 3px 0 0;
+      transition: opacity .2s;
+    }
+    .slide-bar.renov { background: var(--yellow); }
+    .slide-bar.reimis { background: #5bc8f5; }
+    .slide-bar-label {
+      font-size: 9px;
+      color: #888;
+      margin-top: 4px;
+      text-align: center;
+    }
+    .slide-legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 12px;
+    }
+    .slide-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #aaa;
+    }
+    .slide-legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 2px;
+    }
+    .slide-insights-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-top: 24px;
+    }
+    .slide-insight {
+      background: rgba(255,255,255,.05);
+      border-radius: 8px;
+      padding: 14px 16px;
+      border-left: 3px solid var(--yellow);
+      font-size: 11px;
+      color: #ccc;
+      line-height: 1.5;
+    }
+    .slide-insight strong { color: #fff; display: block; margin-bottom: 4px; font-size: 12px; }
+
+    @media (max-width: 900px) {
+      .chart-row { grid-template-columns: 1fr; }
+      .slide-kpis { grid-template-columns: 1fr 1fr; }
+      .slide-insights-row { grid-template-columns: 1fr; }
+    }
+
+    /* ── GLOBAL FILTER BAR ── */
+    .global-filter {
+      background: #fff;
+      border-bottom: 2px solid var(--border);
+      padding: 8px 32px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    }
+    .fg-group { position: relative; }
+    .fg-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      white-space: nowrap;
+    }
+    .fg-divider { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
+
+    /* Dropdown trigger button */
+    .fd-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      transition: all .12s;
+      user-select: none;
+      white-space: nowrap;
+      min-width: 120px;
+      justify-content: space-between;
+    }
+    .fd-trigger:hover { border-color: #aaa; }
+    .fd-trigger.active { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(0,158,227,.15); }
+    .fd-trigger .fd-arrow { font-size: 9px; color: var(--muted); transition: transform .15s; }
+    .fd-trigger.active .fd-arrow { transform: rotate(180deg); }
+    .fd-trigger .fd-summary { color: var(--blue); font-size: 11px; }
+
+    /* Dropdown panel */
+    .fd-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+      padding: 10px;
+      z-index: 999;
+      min-width: 180px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .fd-panel.open { display: block; }
+    .fd-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .fd-panel-title { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+    .fd-sel-all { font-size: 10px; color: var(--blue); cursor: pointer; font-weight: 700; text-decoration: underline; border: none; background: none; padding: 0; }
+    .fd-items { display: flex; flex-direction: column; gap: 3px; }
+
+    /* Pill items inside dropdown */
+    .fp {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      background: #f5f5f5;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .12s;
+      user-select: none;
+      white-space: nowrap;
+      width: 100%;
+      text-align: left;
+    }
+    .fp:hover { border-color: #aaa; color: var(--text); background: #eee; }
+    .fp.on { background: #1A1A1A; border-color: #1A1A1A; color: #fff; }
+    .fp.on.y { background: var(--yellow); border-color: #c9b700; color: #1A1A1A; }
+    .fp.on.b { background: var(--blue); border-color: var(--blue-dark); color: #fff; }
+    .fp.on.g { background: var(--green); border-color: #007a3c; color: #fff; }
+    .fp.on.o { background: var(--orange); border-color: #c95300; color: #fff; }
+    .fp .fp-check { margin-left: auto; font-size: 12px; }
+    /* ── SUMARIO EXECUTIVO ── */
+    .sumario-bar {
+      background: #1A1A1A;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: wrap;
+      border-bottom: 3px solid var(--yellow);
+    }
+    .sumario-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 24px;
+      border-right: 1px solid #333;
+      min-width: 110px;
+    }
+    .sumario-item:first-child { padding-left: 0; }
+    .sumario-item:last-child { border-right: none; }
+    .sumario-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      white-space: nowrap;
+      margin-bottom: 2px;
+    }
+    .sumario-value {
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.1;
+    }
+    .sumario-value.yellow { color: var(--yellow); }
+    .sumario-value.blue   { color: #5bc8f5; }
+    .sumario-value.green  { color: #4cd98a; }
+    .sumario-value.orange { color: #ffab4e; }
+    .sumario-pct {
+      font-size: 10px;
+      font-weight: 700;
+      color: #555;
+      margin-top: 1px;
+    }
+    .sumario-dt {
+      margin-left: auto;
+      font-size: 10px;
+      color: #555;
+      white-space: nowrap;
+      padding-left: 24px;
+    }
+    .sumario-dt strong { color: #aaa; }
+
+    /* Tabela de ciclo de uso */
+    .ciclo-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .ciclo-table th {
+      background: #f5f5f5;
+      padding: 7px 12px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      border-bottom: 2px solid var(--border);
+    }
+    .ciclo-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      color: var(--text);
+    }
+    .ciclo-table tr:last-child td { border-bottom: none; }
+    .ciclo-table tr:hover td { background: #fafafa; }
+
+    /* ── FUNIL VISUAL ── */
+    .funil-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+    .funil-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      padding: 20px 24px 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .funil-card-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .funil-card-sub {
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+    .funil-stages { display: flex; flex-direction: column; align-items: center; gap: 0; }
+    .funil-stage  { width: 100%; display: flex; flex-direction: column; align-items: center; }
+    .funil-bar {
+      width: 100%;
+      height: 48px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      transition: width .3s;
+    }
+    .funil-bar-label { font-size: 11px; font-weight: 700; color: #fff; }
+    .funil-bar-label.dark { color: #1A1A1A; }
+    .funil-bar-value { font-size: 15px; font-weight: 900; color: #fff; }
+    .funil-bar-value.dark { color: #1A1A1A; }
+    .funil-arrow {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 0;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .funil-arrow-line { flex: 1; height: 1px; background: #e0e0e0; }
+    .funil-arrow-pct  { background: #f5f5f5; border-radius: 10px; padding: 2px 8px; font-size: 10px; font-weight: 800; color: #555; }
+    .funil-arrow-pct.good  { background: #e6f7ee; color: #007a3c; }
+    .funil-arrow-pct.mid   { background: #fff3e0; color: #c95300; }
+    .funil-arrow-pct.low   { background: #fdecea; color: #c0392b; }
+
+    @media (max-width: 900px) { .funil-grid { grid-template-columns: 1fr; } }
+    .pct-pill {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      background: #f0f0f0;
+      color: #555;
+    }
+    .pct-pill.high { background: #e6f7ee; color: #007a3c; }
+    .pct-pill.mid  { background: #fff3e0; color: #c95300; }
+    .pct-pill.low  { background: #fdecea; color: #c0392b; }
+
+    .filter-reset-btn {
+      font-size: 11px;
+      color: var(--blue);
+      font-weight: 700;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 3px 6px;
+      text-decoration: underline;
+      white-space: nowrap;
+    }
+    .filter-badge {
+      background: var(--yellow);
+      color: #1A1A1A;
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      display: none;
+    }
+    .filter-badge.show { display: inline-block; }
+    .filter-note {
+      font-size: 10px;
+      color: var(--muted);
+      font-style: italic;
+    }
+    /* Grupo toggle */
+    .grupo-toggle { display: flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+    .gt-btn { font-size: 11px; font-weight: 700; padding: 4px 10px; cursor: pointer; background: transparent; border: none; color: var(--muted); white-space: nowrap; transition: background .15s, color .15s; }
+    .gt-btn.active { background: var(--blue); color: #fff; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-badge">ML</span>
+    <div>
+      <h1>Cartões Expirados Físicos — Controle de Renovações</h1>
+      <div style="font-size:12px;color:#888;margin-top:3px">Grupo 1 · Hybrid (MLB) · Mai/2025 → Mar/2026* · Dados reais BigQuery</div>
+    </div>
+  </div>
+  <div class="meta">
+    Reunião Mensal<br>
+    <strong id="currentDate"></strong>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" onclick="switchTab('visao-geral')">Visão Geral</button>
+  <button class="tab-btn" onclick="switchTab('renovacoes')">Renovações + Reemissões</button>
+  <button class="tab-btn" onclick="switchTab('entrega')">Prazo de Entrega</button>
+  <button class="tab-btn" onclick="switchTab('funil')">Funil de Conversão</button>
+  <button class="tab-btn" onclick="switchTab('ativacao')">Ativacao Pos-Renovacao</button>
+  <button class="tab-btn" onclick="switchTab('insights')">Insights</button>
+  <button class="tab-btn" onclick="switchTab('slide')">Slide Proposto</button>
+</nav>
+
+<!-- ── GLOBAL FILTER BAR ── -->
+<div class="global-filter">
+  <!-- Safra dropdown -->
+  <div class="fg-group" id="dd-safra-wrap">
+    <button class="fd-trigger" id="dd-safra-btn" onclick="toggleDropdown('safra')">
+      <span class="fg-label">Safra</span>
+      <span class="fd-summary" id="dd-safra-summary">Todas</span>
+      <span class="fd-arrow">&#9660;</span>
+    </button>
+    <div class="fd-panel" id="dd-safra-panel">
+      <div class="fd-panel-header">
+        <span class="fd-panel-title">Safra de vencimento</span>
+        <button class="fd-sel-all" onclick="selectAll('safra')">Todas</button>
+      </div>
+      <div class="fd-items" id="fSafra"></div>
+    </div>
+  </div>
+  <div class="fg-divider"></div>
+  <!-- Produto dropdown -->
+  <div class="fg-group" id="dd-prod-wrap">
+    <button class="fd-trigger" id="dd-prod-btn" onclick="toggleDropdown('prod')">
+      <span class="fg-label">Produto</span>
+      <span class="fd-summary" id="dd-prod-summary">Todos</span>
+      <span class="fd-arrow">&#9660;</span>
+    </button>
+    <div class="fd-panel" id="dd-prod-panel">
+      <div class="fd-panel-header">
+        <span class="fd-panel-title">Produto</span>
+        <button class="fd-sel-all" onclick="selectAll('prod')">Todos</button>
+      </div>
+      <div class="fd-items" id="fProd"></div>
+    </div>
+  </div>
+  <div class="fg-divider"></div>
+  <!-- Ciclo dropdown -->
+  <div class="fg-group" id="dd-ciclo-wrap">
+    <button class="fd-trigger" id="dd-ciclo-btn" onclick="toggleDropdown('ciclo')">
+      <span class="fg-label">Ciclo de Uso</span>
+      <span class="fd-summary" id="dd-ciclo-summary">Todos</span>
+      <span class="fd-arrow">&#9660;</span>
+    </button>
+    <div class="fd-panel" id="dd-ciclo-panel">
+      <div class="fd-panel-header">
+        <span class="fd-panel-title">Ciclo de uso</span>
+        <button class="fd-sel-all" onclick="selectAll('ciclo')">Todos</button>
+      </div>
+      <div class="fd-items" id="fCiclo"></div>
+    </div>
+  </div>
+  <div class="fg-divider"></div>
+  <div class="fg-group">
+    <span class="fg-label" style="display:block;margin-bottom:4px">Grupo</span>
+    <div class="grupo-toggle">
+      <button class="gt-btn active" id="gt-g1" onclick="setGrupo('GRUPO1')">Grupo 1</button>
+      <button class="gt-btn" id="gt-g2" onclick="setGrupo('GRUPO2')">Grupo 2</button>
+    </div>
+  </div>
+  <div class="fg-divider"></div>
+  <button class="filter-reset-btn" onclick="resetFilters()">Limpar filtros</button>
+  <span class="filter-badge" id="filterBadge">Filtrado</span>
+  <span class="filter-note" id="filterNote"></span>
+</div>
+
+<main>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TAB: VISÃO GERAL
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="tab-visao-geral" class="tab-panel active">
+
+    <div class="section-title">
+      Visão Geral — Histórico Completo
+      <span class="badge">Mai/25 → Mar/26*</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card" style="border-top:3px solid #a78bfa">
+        <div class="kpi-label"># Expirado — Total</div>
+        <div class="kpi-value" id="kpi-tel" style="color:#a78bfa">—</div>
+        <div class="kpi-sub">Todos os cartões elegíveis com expiração no período</div>
+        <span class="kpi-delta up" id="kpi-delta-tel">base elegível</span>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid #818cf8">
+        <div class="kpi-label"># Expirado — Grupo 1</div>
+        <div class="kpi-value" id="kpi-tel-g1" style="color:#818cf8">—</div>
+        <div class="kpi-sub" id="kpi-tel-g1-sub">Usuários ativos · ciclos ≤ 180d · base do dashboard</div>
+        <span class="kpi-delta up" id="kpi-delta-tel-g1">—</span>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">Renovações</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub">Renovados + Reemitidos acumulados</div>
+        <span class="kpi-delta up" id="kpi-delta-total">—</span>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Renovações Proativas</div>
+        <div class="kpi-value" id="kpi-renov">—</div>
+        <div class="kpi-sub">Emitidas 90d antes do vencimento</div>
+        <span class="kpi-delta up" id="kpi-delta-renov">—</span>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Renovações Reativas</div>
+        <div class="kpi-value" id="kpi-reimis">—</div>
+        <div class="kpi-sub">Renovações emitidas após expiração</div>
+        <span class="kpi-delta down" id="kpi-delta-reimis">—</span>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">Dias Médios de Entrega</div>
+        <div class="kpi-value" id="kpi-dias">—</div>
+        <div class="kpi-sub">Da solicitação ao recebimento</div>
+        <span class="kpi-delta up" id="kpi-delta-dias">—</span>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">Taxa de Conversão</div>
+        <div class="kpi-value" id="kpi-taxa">—</div>
+        <div class="kpi-sub">% renovações / total elegíveis</div>
+        <span class="kpi-delta up" id="kpi-delta-taxa">—</span>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Histórico Mensal — Renovações vs Reemissões</h3>
+        <div class="chart-sub"># absoluto por mês · Barras empilhadas + linha de tendência</div>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="chartMain"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Distribuição por Tipo</h3>
+        <div class="chart-sub">Acumulado Mai/25 → Mar/26*</div>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="chartDonut"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3>Evolução Mensal Detalhada</h3>
+        <div class="chart-sub">Renovações · Reemissões · Dias médios de entrega (eixo secundário)</div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chartCombo"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      ✅ <span><strong>Dados reais do BigQuery</strong> · <code>meli-bi-data.SBOX_CREDITSTC.CARTAO_EXPIRADO_ANL</code> · Atualizado em 27/03/2026 · Safras Mai/25 → Mar/26* (*parcial, vence 31/03). Dias médios calculados por média ponderada das faixas DIAS_ENTREGA.</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TAB: RENOVAÇÕES
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="tab-renovacoes" class="tab-panel">
+    <div class="section-title">
+      Renovações + Reemissões — # Total
+      <span class="badge">Mai/25 → Mar/26*</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card yellow">
+        <div class="kpi-label">Total (Renov + Reemit)</div>
+        <div class="kpi-value" id="r-total">—</div>
+        <div class="kpi-sub">Acumulado período completo</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Renovações (90d antes)</div>
+        <div class="kpi-value" id="r-renov-total">—</div>
+        <div class="kpi-sub" id="r-renov-pct">Proativas · % do total</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">Reemissões (pós-venc.)</div>
+        <div class="kpi-value" id="re-total">—</div>
+        <div class="kpi-sub" id="re-pct">Reativas · % do total</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Melhor Mês</div>
+        <div class="kpi-value" id="r-best">—</div>
+        <div class="kpi-sub" id="r-best-month">—</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Média Mensal</div>
+        <div class="kpi-value" id="r-avg">—</div>
+        <div class="kpi-sub">Total (Renov+Reemit) / mês</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">Crescimento M/M</div>
+        <div class="kpi-value" id="r-growth">—</div>
+        <div class="kpi-sub">Total último mês vs anterior</div>
+      </div>
+    </div>
+
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3># Total por Mês — Renovações + Reemissões</h3>
+        <div class="chart-sub">Barras empilhadas + linha de total · renovações (amarelo) e reemissões (azul)</div>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="chartMainTab"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row two">
+      <div class="chart-card">
+        <h3>Tendência Renovações</h3>
+        <div class="chart-sub"># proativo nos 90d pré-vencimento</div>
+        <div class="chart-wrap" style="height:240px">
+          <canvas id="chartRenov"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Tendência Reemissões</h3>
+        <div class="chart-sub"># reativo pós-vencimento</div>
+        <div class="chart-wrap" style="height:240px">
+          <canvas id="chartReimis"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3>Mix % — Renovações vs Reemissões</h3>
+        <div class="chart-sub">Composição do volume total por mês · meta: aumentar proporção de renovações proativas</div>
+        <div class="chart-wrap" style="height:240px">
+          <canvas id="chartStack100Tab"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-top:20px">
+      <h3>Tabela Detalhada — por Mês</h3>
+      <div class="chart-sub" style="margin-bottom:16px">Histórico completo com variação mensal</div>
+      <div class="table-wrap">
+        <table id="tableRenov"></table>
+      </div>
+    </div>
+
+    <!-- ── TABELA SAFRADA POR CICLO DE USO ── -->
+    <div class="section-title" style="margin-top:32px;font-size:15px">
+      Visão por Safra de Expiração e Ciclo de Uso
+      <span class="badge"># elegível · share por ciclo · renovados + reemitidos</span>
+    </div>
+    <div class="chart-card" style="margin-top:12px">
+      <h3>Tabela por Safra — #, Ciclo de Uso e Renovações</h3>
+      <div class="chart-sub" style="margin-bottom:14px">Cada linha = safra de expiração · Share ciclo = distribuição dos elegíveis por frequência de uso antes da expiração · Preencha <code>CICLO_SAFRA</code> para exibir os shares</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:#0d1628;color:#8899b4;text-align:center;font-size:11px;letter-spacing:.4px;text-transform:uppercase">
+              <th style="padding:9px 12px;text-align:left;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#94a3b8">Safra Exp.</th>
+              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#818cf8">Vol. Elegível G1</th>
+              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#fff;font-weight:700">Renovados</th>
+              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#4ade80;font-weight:700">% Eleg.</th>
+              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;border-left:2px solid #1e3a2f;white-space:nowrap;color:#4ade80;background:rgba(74,222,128,.05)">0–30d</th>
+              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#34d399;background:rgba(52,211,153,.05)">31–60d</th>
+              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#22d3ee;background:rgba(34,211,238,.05)">61–90d</th>
+              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#fbbf24;background:rgba(251,191,36,.05)">91–120d</th>
+              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#fb923c;background:rgba(251,146,60,.05)">121–180d</th>
+              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;border-left:2px solid #3a1e1e;white-space:nowrap;color:#f87171;background:rgba(248,113,113,.05)">&gt;180d</th>
+              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#94a3b8;background:rgba(148,163,184,.05)">Inativo</th>
+            </tr>
+          </thead>
+          <tbody id="ciclo-safra-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════���══════════════════════════
+       TAB: PRAZO DE ENTREGA
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="tab-entrega" class="tab-panel">
+    <div class="section-title">
+      Prazo de Entrega
+      <span class="badge">SLA</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card yellow">
+        <div class="kpi-label">Média Geral (dias)</div>
+        <div class="kpi-value" id="e-avg">—</div>
+        <div class="kpi-sub">Da solicitação ao recebimento físico</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Melhor Mês</div>
+        <div class="kpi-value" id="e-best">—</div>
+        <div class="kpi-sub" id="e-best-m">—</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">Pior Mês</div>
+        <div class="kpi-value" id="e-worst">—</div>
+        <div class="kpi-sub" id="e-worst-m">—</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Tendência</div>
+        <div class="kpi-value" id="e-trend">—</div>
+        <div class="kpi-sub">vs início do período</div>
+      </div>
+    </div>
+
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3>Evolução dos Dias Médios de Entrega</h3>
+        <div class="chart-sub">Linha de tendência e SLA alvo</div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="chartDias"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TAB: FUNIL DE CONVERSÃO
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="tab-funil" class="tab-panel">
+    <div class="section-title">
+      Funil de Conversão — Cartões Expirados
+      <span class="badge">Elegíveis → Ativados</span>
+    </div>
+
+    <!-- Funis visuais: Total + últimas 2 safras -->
+    <div class="funil-grid" id="funil-grid">
+      <!-- Total (responsivo aos filtros) -->
+      <div class="funil-card">
+        <div class="funil-card-title">Total Acumulado</div>
+        <div class="funil-card-sub" id="fn-total-sub">Todas as safras selecionadas</div>
+        <div class="funil-stages" id="funil-total"></div>
+      </div>
+      <!-- Safra -1 (penúltima completa) -->
+      <div class="funil-card">
+        <div class="funil-card-title" id="fn-s1-title">Safra —</div>
+        <div class="funil-card-sub">Penultima safra completa</div>
+        <div class="funil-stages" id="funil-s1"></div>
+      </div>
+      <!-- Safra -0 (última completa) -->
+      <div class="funil-card">
+        <div class="funil-card-title" id="fn-s2-title">Safra —</div>
+        <div class="funil-card-sub">Ultima safra completa</div>
+        <div class="funil-stages" id="funil-s2"></div>
+      </div>
+    </div>
+
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3>Funil por Safra — # Absoluto</h3>
+        <div class="chart-sub">Elegíveis → Solicitações → Entregues · cada barra é uma safra de vencimento</div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="chartFunil"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3>Taxa de Conversão por Etapa (%)</h3>
+        <div class="chart-sub">% Solicitações / Elegíveis · % Entregues / Solicitações · % Ativados / Entregues</div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="chartFunilPct"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seção uso TD + TC pós-desbloqueio -->
+    <div class="section-title" style="margin-top:32px;font-size:15px">
+      Uso do Cartão Físico — TD e TC
+      <span class="badge">Pós-Desbloqueio</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-label">Ativos TC (Físico)</div>
+        <div class="kpi-value" id="fn-tc-ativos">—</div>
+        <div class="kpi-sub" id="fn-tc-pct">Usuários com transação TC física</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">TPV TC (Físico)</div>
+        <div class="kpi-value" id="fn-tc-tpv">—</div>
+        <div class="kpi-sub">R$ transacionado via TC físico</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Ativos TD</div>
+        <div class="kpi-value" id="fn-td-ativos">—</div>
+        <div class="kpi-sub" id="fn-td-pct">Usuários com transação TD física</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">TPV TD</div>
+        <div class="kpi-value" id="fn-td-tpv">—</div>
+        <div class="kpi-sub">R$ transacionado via TD</div>
+      </div>
+    </div>
+
+    <div class="chart-row two">
+      <div class="chart-card">
+        <h3>Ativos por Produto — TC vs TD</h3>
+        <div class="chart-sub">Usuários com uso físico por mês · TC = crédito físico · TD = débito</div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chartUsoAtivos"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>TPV por Produto — TC vs TD</h3>
+        <div class="chart-sub">R$ transacionado no cartão físico por mês</div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chartUsoTpv"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TPV TIMELINE -6 A +6 MESES (no funil) ── -->
+    <div class="section-title" style="margin-top:32px;font-size:15px">
+      TPV e R$ — 6 Meses Antes e Depois da Expiração
+      <span class="badge">−6 a +6 meses · cada linha = safra de expiração</span>
+    </div>
+    <div class="chart-row two">
+      <div class="chart-card">
+        <h3>TPV TC — Trajetória por Safra</h3>
+        <div class="chart-sub">Crédito físico · linha vermelha = mês de expiração · meses −3 a +3 estimados da janela 90d</div>
+        <div class="chart-wrap" style="height:320px">
+          <canvas id="chartFunilTlTc"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>TPV TD — Trajetória por Safra</h3>
+        <div class="chart-sub">Débito físico · linha vermelha = mês de expiração · meses −3 a +3 estimados da janela 90d</div>
+        <div class="chart-wrap" style="height:320px">
+          <canvas id="chartFunilTlTd"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3>TPV Total (TC + TD) — Trajetória por Safra</h3>
+        <div class="chart-sub">R$ combinado · cada linha = uma safra · queda no mês de expiração e recuperação pós-renovação</div>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="chartFunilTlTotal"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SPENDING MEDIO POR USUARIO -6 A +6 MESES ── -->
+    <div class="section-title" style="margin-top:32px;font-size:15px">
+      Spending Médio por Usuário — 6 Meses Antes e Depois da Expiração
+      <span class="badge">R$/usuário · normalizado por renovados ativos · cada linha = safra</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
+      <div class="chart-card">
+        <h3>Spending Médio TC por Usuário</h3>
+        <div class="chart-sub">R$/usuário ativo TC · antes = tpv_tc/base · depois = tpv_tc/ativos_tc</div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="chartSpendTlTc"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Spending Médio TD por Usuário</h3>
+        <div class="chart-sub">R$/usuário ativo TD · antes = tpv_td/base · depois = tpv_td/ativos_td</div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="chartSpendTlTd"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-top:16px">
+      <h3>Spending Médio Total (TC+TD) por Usuário</h3>
+      <div class="chart-sub">R$/renovado ativo · (tpv_tc+tpv_td)/ativados · queda e recuperação por safra</div>
+      <div class="chart-wrap" style="height:300px">
+        <canvas id="chartSpendTlTotal"></canvas>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      ℹ️ <span><strong>TC Físico</strong>: transações com cartão de crédito em modalidade FISICO (chip/tarja) · <strong>TD</strong>: transações de débito com cartão físico/híbrido. Desbloqueados = usuários com ao menos 1 transação TC ou TD física no período. Execute a query fornecida no BQ e atualize <code>USO_FISICO</code> no script.</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TAB: ATIVACAO POS-RENOVACAO
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="tab-ativacao" class="tab-panel">
+    <div class="section-title">
+      Ativacao Pos-Renovacao
+      <span class="badge">Uso real apos recebimento do cartao</span>
+    </div>
+
+    <!-- KPIs principais do funil -->
+    <div class="kpi-grid">
+      <div class="kpi-card yellow">
+        <div class="kpi-label">Base Renovados/Reemitidos</div>
+        <div class="kpi-value" id="atv-base">—</div>
+        <div class="kpi-sub">Total com DT_RENOVACAO_REEMISSAO preenchida</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Ativados (TC ou TD)</div>
+        <div class="kpi-value" id="atv-ativados">—</div>
+        <div class="kpi-sub" id="atv-ativados-pct">Tiveram ao menos 1 uso fisico apos renovacao</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Nao Ativados</div>
+        <div class="kpi-value" id="atv-nao-ativos">—</div>
+        <div class="kpi-sub" id="atv-nao-pct">Sem uso fisico registrado apos renovacao</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">Ativos em Ambos (TC e TD)</div>
+        <div class="kpi-value" id="atv-ambos">—</div>
+        <div class="kpi-sub" id="atv-ambos-pct">Usaram credito E debito fisico</div>
+      </div>
+    </div>
+
+    <!-- Grafico funil por safra -->
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3>Funil de Ativacao por Safra de Renovacao</h3>
+        <div class="chart-sub">Base renovada → Ativados → Ativos TC → Ativos TD · por mes de renovacao/reemissao</div>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="chartAtivFunil"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Taxa de ativacao -->
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3>Taxa de Ativacao por Safra (%)</h3>
+        <div class="chart-sub">% ativados / base renovada · % TC / ativados · % TD / ativados</div>
+        <div class="chart-wrap" style="height:240px">
+          <canvas id="chartAtivPct"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs TC vs TD -->
+    <div class="section-title" style="margin-top:32px;font-size:15px">
+      Desempenho por Produto
+      <span class="badge">TC vs TD</span>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-label">Ativos TC</div>
+        <div class="kpi-value" id="atv-tc-ativos">—</div>
+        <div class="kpi-sub" id="atv-tc-pct">Uso de credito fisico pos-renovacao</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">TPV TC (R$)</div>
+        <div class="kpi-value" id="atv-tc-tpv">—</div>
+        <div class="kpi-sub" id="atv-tc-tpn">R$ transacionado credito fisico</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Ativos TD</div>
+        <div class="kpi-value" id="atv-td-ativos">—</div>
+        <div class="kpi-sub" id="atv-td-pct">Uso de debito fisico pos-renovacao</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">TPV TD (R$)</div>
+        <div class="kpi-value" id="atv-td-tpv">—</div>
+        <div class="kpi-sub" id="atv-td-tpn">R$ transacionado debito</div>
+      </div>
+    </div>
+
+    <!-- Graficos TC vs TD -->
+    <div class="chart-row two">
+      <div class="chart-card">
+        <h3>Ativos por Produto por Safra</h3>
+        <div class="chart-sub">TC Ativos vs TD Ativos por mes de renovacao</div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chartAtivAtivos"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>TPV por Produto por Safra</h3>
+        <div class="chart-sub">R$ transacionado TC vs TD por mes de renovacao</div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chartAtivTpv"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spending antes vs depois -->
+    <div class="section-title" style="margin-top:32px;font-size:15px">
+      R$: 3 meses antes vs 3 meses depois da renovacao
+      <span class="badge">Comparativo por safra</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card yellow">
+        <div class="kpi-label">TPV Total Antes (90d)</div>
+        <div class="kpi-value" id="sp-tpv-antes">—</div>
+        <div class="kpi-sub">TC + TD nos 3 meses anteriores a renovacao</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">TPV Total Depois (90d)</div>
+        <div class="kpi-value" id="sp-tpv-depois">—</div>
+        <div class="kpi-sub">TC + TD nos 3 meses posteriores a renovacao</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Variacao TPV</div>
+        <div class="kpi-value" id="sp-variacao">—</div>
+        <div class="kpi-sub" id="sp-variacao-sub">Crescimento apos renovacao</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">R$ Médio por Usuário</div>
+        <div class="kpi-value" id="sp-ticket">—</div>
+        <div class="kpi-sub" id="sp-ticket-sub">TPV depois / ativados</div>
+      </div>
+    </div>
+
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3>TPV Total: 3 meses Antes vs 3 meses Depois da Renovacao</h3>
+        <div class="chart-sub">Comparativo de R$ físico (TC + TD) por safra de renovação · janela de 90 dias em cada lado</div>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="chartSpending"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row two">
+      <div class="chart-card">
+        <h3>TPV TC: Antes vs Depois</h3>
+        <div class="chart-sub">Credito fisico 90d antes vs 90d depois da renovacao</div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chartSpendingTc"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>TPV TD: Antes vs Depois</h3>
+        <div class="chart-sub">Debito fisico 90d antes vs 90d depois da renovacao</div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chartSpendingTd"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SPENDING TIMELINE: -6 a +6 meses ── -->
+    <div class="section-title" style="margin-top:32px;font-size:15px">
+      TPV por Mês Relativo à Expiração
+      <span class="badge">−6 a +6 meses · cada linha = safra de expiração</span>
+    </div>
+    <div class="chart-row two">
+      <div class="chart-card">
+        <h3>TPV TC — Trajetória por Safra</h3>
+        <div class="chart-sub">Crédito físico · linha vermelha = mês de expiração · meses -3 a +3 estimados da janela de 90d</div>
+        <div class="chart-wrap" style="height:340px">
+          <canvas id="chartTimelineTc"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>TPV TD — Trajetória por Safra</h3>
+        <div class="chart-sub">Débito físico · linha vermelha = mês de expiração · meses -3 a +3 estimados da janela de 90d</div>
+        <div class="chart-wrap" style="height:340px">
+          <canvas id="chartTimelineTd"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="footer-note" style="margin:8px 0 20px">
+      Nota: meses −3 a −1 estimados a partir dos 90 dias antes da renovação (÷3 por mês). Meses +1 a +3 estimados a partir dos 90 dias após renovação (÷3). Meses −6 a −4 e +4 a +6 sem dados — execute a query mensal no BQ e preencha <code>SPENDING_TIMELINE</code> para dados precisos.
+    </div>
+
+    <div class="footer-note">
+      Fonte: CARTAO_EXPIRADO_ANL cruzado com BT_CCARD_PURCHASE (TC) e BT_DBT_TRANSACTIONS (TD). Ativados = usuarios com ao menos 1 transacao fisica apos renovacao. Spending = janela de 90 dias antes e 90 dias depois de DT_RENOVACAO_REEMISSAO. Execute as queries fornecidas no BQ e atualize <code>FUNIL_DATA</code> e <code>SPENDING_ANTES</code> no script.
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TAB: INSIGHTS
+  ══════════════════════════════════��════════════════════════ -->
+  <div id="tab-insights" class="tab-panel">
+    <div class="section-title">
+      Principais Insights
+      <span class="badge">Análise</span>
+    </div>
+
+    <div class="insights-grid">
+      <div class="insight-card good">
+        <div class="insight-icon">📈</div>
+        <div>
+          <div class="insight-title">Crescimento explosivo: 56x em 7 meses</div>
+          <div class="insight-text">Renovações saltaram de <strong>1.230 (Mai/25)</strong> para <strong>69.397 (Dez/25)</strong> — crescimento de 56x. O pico de Dez/25 coincide com o maior volume de elegíveis (443K cartões), confirmando que o processo acompanhou a demanda sazonal.</div>
+        </div>
+      </div>
+      <div class="insight-card good">
+        <div class="insight-icon">⏱️</div>
+        <div>
+          <div class="insight-title">SLA de entrega melhorou 47% desde Jul/25</div>
+          <div class="insight-text">Prazo médio caiu de <strong>7,5 dias (Jul/25)</strong> para <strong>4,0 dias (Out/25+)</strong>. A virada aconteceu em Ago/25: faixa "Até 5 dias" passou a dominar (~44% dos envios), sinalizando melhoria operacional significativa na logística.</div>
+        </div>
+      </div>
+      <div class="insight-card alert">
+        <div class="insight-icon">⚠️</div>
+        <div>
+          <div class="insight-title">Reemissões: ~15% do total processado</div>
+          <div class="insight-text">Set/25 registrou o maior volume absoluto de reemissões (<strong>9.020</strong>), representando 17,4% do total processado naquele mês. Em Dez/25 o percentual caiu para 14,4% — tendência de melhora mas ainda com oportunidade de redução.</div>
+        </div>
+      </div>
+      <div class="insight-card info">
+        <div class="insight-icon">🎯</div>
+        <div>
+          <div class="insight-title">Sazonalidade concentrada em Q4 2025</div>
+          <div class="insight-text">Nov/25 e Dez/25 juntos somaram <strong>128.549 renovações</strong> (35% do total do período). #s de elegíveis em Nov/25 (416K) e Dez/25 (444K) foram os maiores da série. Planejar capacidade logística com antecedência para Q4 2026.</div>
+        </div>
+      </div>
+      <div class="insight-card warn">
+        <div class="insight-icon">🔄</div>
+        <div>
+          <div class="insight-title">Mar/26 ainda em processamento (safra parcial)</div>
+          <div class="insight-text">Com vencimento no último dia de março, a safra Mar/26 ainda está em andamento: <strong>11.785 renovações e 0 reemissões</strong> registradas até 27/03. O volume final de reemissões será contabilizado após o dia 31/03/2026.</div>
+        </div>
+      </div>
+      <div class="insight-card info">
+        <div class="insight-icon">📊</div>
+        <div>
+          <div class="insight-title">Taxa de conversão sobre elegíveis: ~18% em média</div>
+          <div class="insight-text">A relação (renovações + reemissões) / total elegível fica entre 15–20% nos meses maduros. Ex: Dez/25 = 81.073 processados / 443.767 elegíveis = <strong>18,3%</strong>. Grande parcela do universo elegível ainda não interage com o fluxo de renovação.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row two" style="margin-top:24px">
+      <div class="chart-card">
+        <h3>Renovações vs Reemissões — Tendência</h3>
+        <div class="chart-sub">Convergência desejada: mais renovações, menos reemissões</div>
+        <div class="chart-wrap" style="height:240px">
+          <canvas id="chartTrend"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Participação Mensal por Tipo</h3>
+        <div class="chart-sub">% de renovações vs reemissões no mix total</div>
+        <div class="chart-wrap" style="height:240px">
+          <canvas id="chartStack100"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TAB: SLIDE PROPOSTO
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="tab-slide" class="tab-panel">
+    <div class="section-title">
+      Slide 5 — Proposta de Layout
+      <span class="badge">PPT Preview</span>
+    </div>
+
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">
+      Abaixo um mockup visual do slide 5 para a reunião mensal. Destaca volume total, dias médios de entrega e principais achados de forma executiva.
+    </p>
+
+    <div class="slide-preview">
+      <div class="slide-heading">Cartões Físicos · Grupo 1 · Híbrido (MLB)</div>
+      <div class="slide-title">Histórico de Renovações<br>& Reemissões — Mai/25 → Mar/26*</div>
+
+      <div class="slide-kpis">
+        <div class="slide-kpi">
+          <div class="s-label"># Total Acumulado</div>
+          <div class="s-value yellow" id="sl-total">—</div>
+          <div class="s-delta">Renovações + Reemissões</div>
+        </div>
+        <div class="slide-kpi">
+          <div class="s-label">Renovações Proativas</div>
+          <div class="s-value blue" id="sl-renov">—</div>
+          <div class="s-delta">Emitidas 90d antes do venc.</div>
+        </div>
+        <div class="slide-kpi">
+          <div class="s-label">Dias Médios de Entrega</div>
+          <div class="s-value green" id="sl-dias">—</div>
+          <div class="s-delta">Solicitação → Recebimento</div>
+        </div>
+      </div>
+
+      <div class="slide-chart-area">
+        <div style="font-size:11px;color:#888;margin-bottom:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px"># Mensal por Tipo</div>
+        <div class="slide-bar-row" id="slideBarChart"></div>
+        <div style="display:flex;gap:4px;overflow:hidden">
+          <div id="slideBarLabels" style="display:flex;gap:6px;width:100%"></div>
+        </div>
+        <div class="slide-legend">
+          <div class="slide-legend-item">
+            <div class="slide-legend-dot" style="background:var(--yellow)"></div>
+            Renovações (90d antes)
+          </div>
+          <div class="slide-legend-item">
+            <div class="slide-legend-dot" style="background:#5bc8f5"></div>
+            Reemissões (pós-venc.)
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-insights-row">
+        <div class="slide-insight">
+          <strong>Crescimento 56x em 7 meses</strong>
+          De 1.230 renovações (Mai/25) para 69.397 (Dez/25). Pico acompanhou o maior volume de elegíveis da série (444K cartões em Dez/25).
+        </div>
+        <div class="slide-insight">
+          <strong>SLA melhorou 47%</strong>
+          Prazo médio caiu de 7,5d (Jul/25) para 4,0d (Out/25+). Virada operacional em Ago/25 — faixa "até 5 dias" tornou-se dominante.
+        </div>
+        <div class="slide-insight">
+          <strong>Reemissões: ~15% do mix</strong>
+          Set/25 maior volume absoluto (9.020). Em Dez/25 caiu para 14,4%. Oportunidade de redução via engajamento na janela de 90 dias.
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note" style="margin-top:20px">
+      💡 <span><strong>Dados reais — BigQuery</strong> · <code>meli-bi-data.SBOX_CREDITSTC.CARTAO_EXPIRADO_ANL</code> · Atualizado em 27/03/2026 · *Mar/26 parcial (safra vence em 31/03/2026)</span>
+    </div>
+  </div>
+
+</main>
+
+<script src="dashboard_data.js"></script>
+<script>
+// ── ESTADO DOS FILTROS ────────────────────────────────────────
+const state = {
+  safras: new Set(MONTHLY.map(m => m.mes)),
+  prods:  new Set(PRODS),
+  ciclos: new Set(CICLOS),
+  grupo: 'GRUPO1',
+};
+
+// ── HELPERS ───────────────────────────────────────────────────
+// Peso acumulado dos produtos selecionados (0-1), usado para escalar FUNIL_DATA
+function getProdWeight() {
+  return [...state.prods].reduce((a,p) => a+(P_W[p]||0), 0);
+}
+// Peso dos ciclos selecionados (usa C_REN como proxy de ativação)
+function getCicloWeight() {
+  const total = Object.values(C_REN).reduce((a,b)=>a+b,0);
+  return [...state.ciclos].reduce((a,c) => a+(C_REN[c]||0), 0) / total;
+}
+const fmt     = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'K' : String(n);
+const fmtFull = n => n.toLocaleString('pt-BR');
+const sum     = arr => arr.reduce((a,b)=>a+b,0);
+const avg     = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+
+// ── DATA COMPUTADA COM FILTROS ────────────────────────────────
+function getD() {
+  const filtered = RAW_DATA.filter(r =>
+    state.safras.has(r.mes) &&
+    state.prods.has(r.prod) &&
+    state.ciclos.has(r.ciclo)
+  );
+  const months = MONTHLY.filter(m => state.safras.has(m.mes)).map(m => m.mes);
+  const byM = {};
+  months.forEach(m => byM[m] = {ren:0, rei:0, tel:0, ent:0});
+  filtered.forEach(r => {
+    if (byM[r.mes]) {
+      byM[r.mes].ren += r.ren; byM[r.mes].rei += r.rei;
+      byM[r.mes].tel += r.tel; byM[r.mes].ent += r.ent;
+    }
+  });
+  const diasMedios = months.map(m => (MONTHLY.find(x=>x.mes===m)||{dm:0}).dm);
+  return {
+    meses:      months,
+    renovacoes: months.map(m => byM[m].ren),
+    reemissoes: months.map(m => byM[m].rei),
+    diasMedios,
+    entregues:  months.map(m => byM[m].ent),
+    elegiveis:  months.map(m => byM[m].tel),
+  };
+}
+
+// Dados apenas para KPIs (meses completos)
+function getKpiD() {
+  const filtered = RAW_DATA.filter(r =>
+    state.safras.has(r.mes) && r.completo &&
+    state.prods.has(r.prod) && state.ciclos.has(r.ciclo)
+  );
+  const months = MONTHLY.filter(m => state.safras.has(m.mes) && m.completo).map(m => m.mes);
+  const byM = {};
+  months.forEach(m => byM[m] = {ren:0, rei:0, tel:0, ent:0, dm:0});
+  filtered.forEach(r => {
+    if(byM[r.mes]){ byM[r.mes].ren+=r.ren; byM[r.mes].rei+=r.rei;
+                    byM[r.mes].tel+=r.tel; byM[r.mes].ent+=r.ent; }
+  });
+  MONTHLY.filter(m=>state.safras.has(m.mes)&&m.completo).forEach(m=>{
+    if(byM[m.mes]) byM[m.mes].dm = m.dm;
+  });
+  // totalTelFull e totalTelG1: usa dados reais BQ escalados pelos filtros de produto e ciclo
+  const selectedSafras = [...state.safras];
+  const pw = getProdWeight();
+  const G1_CICLOS_LIST = ['0-30d','31-60d','61-90d','91-120d','121-180d'];
+  const g1CicloW = G1_CICLOS_LIST.filter(c => state.ciclos.has(c)).length / G1_CICLOS_LIST.length;
+  const totalTelFull = Math.round(selectedSafras.reduce((a, mes) => {
+    return a + (TOTAL_EXPIRADO[mesToSafra(mes)] || 0);
+  }, 0) * pw);
+  const totalTelG1 = Math.round(selectedSafras.reduce((a, mes) => {
+    return a + (TOTAL_GRUPO1[mesToSafra(mes)] || 0);
+  }, 0) * pw * g1CicloW);
+
+  const entVec = months.map(m=>byM[m].ent);
+  const dmVec  = months.map(m=>byM[m].dm);
+  const entSum = sum(entVec);
+  return {
+    months,
+    totalRen:     sum(months.map(m=>byM[m].ren)),
+    totalRei:     sum(months.map(m=>byM[m].rei)),
+    totalTel:     sum(months.map(m=>byM[m].tel)),
+    totalTelFull,
+    totalTelG1,
+    totalEnt:  entSum,
+    avgDm:     entSum ? (sum(entVec.map((e,i)=>e*dmVec[i]))/entSum).toFixed(1) : '—',
+    lastRen:   months.length ? byM[months.at(-1)].ren : 0,
+    prevRen:   months.length>1 ? byM[months.at(-2)].ren : 0,
+    lastRei:   months.length ? byM[months.at(-1)].rei : 0,
+    prevRei:   months.length>1 ? byM[months.at(-2)].rei : 0,
+    lastDm:    months.length ? byM[months.at(-1)].dm : 0,
+    prevDm:    months.length>1 ? byM[months.at(-2)].dm : 0,
+  };
+}
+
+// ── INSTÂNCIAS DOS GRÁFICOS ────────────────────────────────────
+const charts = {};
+
+// ── CORES ─────────────────────────────────────────────────────
+const C = {
+  yellow:'#FFE600', yellowA:'rgba(255,230,0,.15)',
+  blue:'#009EE3',   blueA:'rgba(0,158,227,.15)',
+  green:'#00A650',  red:'#FF3B30', orange:'#FF6B00',
+};
+
+// ── CRIAÇÃO DOS GRÁFICOS ───────────────────────────────────────
+function initCharts() {
+  const D = getD();
+  Chart.register(ChartDataLabels);
+
+  // chartMain
+  charts.main = new Chart(document.getElementById('chartMain'), {
+    type:'bar',
+    data:{
+      labels: D.meses,
+      datasets:[
+        {label:'Renovações', data:D.renovacoes, backgroundColor:C.yellow, borderRadius:4, order:2},
+        {label:'Reemissões', data:D.reemissoes, backgroundColor:C.blue, borderRadius:4, order:2},
+        {label:'Total', type:'line', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]),
+          borderColor:C.orange, borderWidth:2, pointRadius:3, fill:false, tension:.4, order:1},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      scales:{
+        x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
+        y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartDonut
+  const kpi = getKpiD();
+  charts.donut = new Chart(document.getElementById('chartDonut'), {
+    type:'doughnut',
+    data:{
+      labels:['Renovações (90d antes)','Reemissões (pós-venc.)'],
+      datasets:[{data:[kpi.totalRen,kpi.totalRei], backgroundColor:[C.yellow,C.blue], borderWidth:0, hoverOffset:8}]
+    },
+    options:{responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{color:'#333',font:{weight:'bold',size:12},
+          formatter:(v,ctx)=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0); return t?((v/t)*100).toFixed(1)+'%':'0%';}}
+      }
+    }
+  });
+
+  // chartCombo
+  charts.combo = new Chart(document.getElementById('chartCombo'), {
+    type:'bar',
+    data:{
+      labels:D.meses,
+      datasets:[
+        {label:'Renovações', data:D.renovacoes, backgroundColor:C.yellowA, borderColor:C.yellow, borderWidth:1.5, borderRadius:3, yAxisID:'y'},
+        {label:'Reemissões', data:D.reemissoes, backgroundColor:C.blueA,   borderColor:C.blue,   borderWidth:1.5, borderRadius:3, yAxisID:'y'},
+        {label:'Dias Médios', type:'line', data:D.diasMedios, borderColor:C.orange, borderWidth:2.5,
+          pointRadius:4, pointBackgroundColor:'#fff', pointBorderColor:C.orange, fill:false, tension:.4, yAxisID:'y2'},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{color:'#eee'}, position:'left'},
+        y2:{beginAtZero:false, ticks:{callback:v=>v+'d',font:{size:10}}, position:'right', grid:{display:false}},
+      }
+    }
+  });
+
+  // chartRenov
+  charts.renov = new Chart(document.getElementById('chartRenov'), {
+    type:'bar',
+    data:{labels:D.meses, datasets:[{label:'Renovações',data:D.renovacoes,backgroundColor:C.yellow,borderRadius:4}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:9},formatter:v=>fmt(v)}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}}}
+    }
+  });
+
+  // chartReimis
+  charts.reimis = new Chart(document.getElementById('chartReimis'), {
+    type:'bar',
+    data:{labels:D.meses, datasets:[{label:'Reemissões',data:D.reemissoes,backgroundColor:C.blue,borderRadius:4}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:9},formatter:v=>fmt(v)}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}}}
+    }
+  });
+
+  // chartMainTab — copia do chartMain para a aba unificada
+  charts.mainTab = new Chart(document.getElementById('chartMainTab'), {
+    type:'bar',
+    data:{
+      labels: D.meses,
+      datasets:[
+        {label:'Renovações', data:D.renovacoes, backgroundColor:C.yellow, borderRadius:4, order:2},
+        {label:'Reemissões', data:D.reemissoes, backgroundColor:C.blue, borderRadius:4, order:2},
+        {label:'Total', type:'line', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]),
+          borderColor:C.orange, borderWidth:2, pointRadius:3, fill:false, tension:.4, order:1},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      scales:{
+        x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
+        y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartStack100Tab — copia do chartStack100 para a aba unificada
+  const pRT = D.renovacoes.map((r,i)=>{ const t=r+D.reemissoes[i]; return t?+(r/t*100).toFixed(1):0; });
+  const pET = D.reemissoes.map((re,i)=>{ const t=re+D.renovacoes[i]; return t?+(re/t*100).toFixed(1):0; });
+  charts.stackTab = new Chart(document.getElementById('chartStack100Tab'), {
+    type:'bar',
+    data:{
+      labels:D.meses,
+      datasets:[
+        {label:'Renovações %', data:pRT, backgroundColor:C.yellow, borderRadius:3, stack:'s'},
+        {label:'Reemissões %', data:pET, backgroundColor:C.blue, stack:'s'},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{display:ctx=>ctx.datasetIndex===0, anchor:'center',align:'center',
+          color:'#333',font:{size:9,weight:'bold'},formatter:v=>v+'%'}},
+      scales:{
+        x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
+        y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartDias
+  charts.dias = new Chart(document.getElementById('chartDias'), {
+    type:'line',
+    data:{
+      labels:D.meses,
+      datasets:[
+        {label:'Dias Médios de Entrega', data:D.diasMedios, borderColor:C.orange, borderWidth:2.5,
+          backgroundColor:'rgba(255,107,0,.08)', fill:true, tension:.4,
+          pointRadius:5, pointBackgroundColor:'#fff', pointBorderColor:C.orange, pointBorderWidth:2},
+        {label:'SLA Alvo (5d)', type:'line', data:D.meses.map(()=>5),
+          borderColor:C.green, borderWidth:1.5, borderDash:[6,4], pointRadius:0, fill:false},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:9,weight:'bold'},formatter:v=>v+'d'}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{min:3,max:9,ticks:{callback:v=>v+'d',font:{size:10}},grid:{color:'#eee'}}}
+    }
+  });
+
+  // chartTrend
+  charts.trend = new Chart(document.getElementById('chartTrend'), {
+    type:'line',
+    data:{
+      labels:D.meses,
+      datasets:[
+        {label:'Renovações', data:D.renovacoes, borderColor:C.yellow, borderWidth:2.5, backgroundColor:C.yellowA, fill:true, tension:.4, pointRadius:3},
+        {label:'Reemissões', data:D.reemissoes, borderColor:C.blue,   borderWidth:2.5, backgroundColor:C.blueA,   fill:true, tension:.4, pointRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}}}
+    }
+  });
+
+  // chartStack100
+  const pR = D.renovacoes.map((r,i)=>{ const t=r+D.reemissoes[i]; return t?+(r/t*100).toFixed(1):0; });
+  const pE = D.reemissoes.map((re,i)=>{ const t=re+D.renovacoes[i]; return t?+(re/t*100).toFixed(1):0; });
+  charts.stack = new Chart(document.getElementById('chartStack100'), {
+    type:'bar',
+    data:{
+      labels:D.meses,
+      datasets:[
+        {label:'Renovações %', data:pR, backgroundColor:C.yellow, borderRadius:3, stack:'s'},
+        {label:'Reemissões %', data:pE, backgroundColor:C.blue,   stack:'s'},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{display:ctx=>ctx.datasetIndex===0, anchor:'center',align:'center',
+          color:'#333',font:{size:9,weight:'bold'},formatter:v=>v+'%'}},
+      scales:{
+        x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
+        y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartFunil — funil absoluto (elegíveis, solicitações, entregues)
+  charts.funil = new Chart(document.getElementById('chartFunil'), {
+    type:'bar',
+    data:{
+      labels: D.meses,
+      datasets:[
+        {label:'Elegíveis', data:D.elegiveis, backgroundColor:'rgba(255,230,0,.3)', borderColor:'#FFE600', borderWidth:1.5, borderRadius:3},
+        {label:'Solicitações (Ren+Rei)', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:'rgba(0,158,227,.5)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'Entregues', data:D.entregues, backgroundColor:'rgba(0,166,80,.5)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8},formatter:v=>v>=1000?(v/1000).toFixed(0)+'K':v}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,ticks:{callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v,font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartFunilPct — taxas de conversão por etapa
+  const pctSol = D.meses.map((_,i) => {
+    const tel=D.elegiveis[i], sol=D.renovacoes[i]+D.reemissoes[i];
+    return tel ? +(sol/tel*100).toFixed(1) : 0;
+  });
+  const pctEnt = D.meses.map((_,i) => {
+    const sol=D.renovacoes[i]+D.reemissoes[i], ent=D.entregues[i];
+    return sol ? +(ent/sol*100).toFixed(1) : 0;
+  });
+  charts.funilPct = new Chart(document.getElementById('chartFunilPct'), {
+    type:'bar',
+    data:{
+      labels: D.meses,
+      datasets:[
+        {label:'% Solicitações / Elegíveis', data:pctSol, backgroundColor:'rgba(0,158,227,.6)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'% Entregues / Solicitações', data:pctEnt, backgroundColor:'rgba(0,166,80,.6)',  borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8,weight:'bold'},formatter:v=>v+'%'}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,max:110,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartUsoAtivos — TC vs TD ativos (funil de conversao)
+  charts.usoAtivos = new Chart(document.getElementById('chartUsoAtivos'), {
+    type:'bar',
+    data:{
+      labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
+      datasets:[
+        {label:'TC Ativos (Fisico)', data:FUNIL_DATA.map(d=>d.ativos_tc), backgroundColor:'rgba(0,158,227,.7)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'TD Ativos', data:FUNIL_DATA.map(d=>d.ativos_td), backgroundColor:'rgba(0,166,80,.7)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8},formatter:v=>v?fmt(v):''}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartUsoTpv — TPV TC vs TD (funil de conversao)
+  charts.usoTpv = new Chart(document.getElementById('chartUsoTpv'), {
+    type:'bar',
+    data:{
+      labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
+      datasets:[
+        {label:'TPV TC (R$)', data:FUNIL_DATA.map(d=>d.tpv_tc), backgroundColor:'rgba(0,158,227,.7)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'TPV TD (R$)', data:FUNIL_DATA.map(d=>d.tpv_td), backgroundColor:'rgba(0,166,80,.7)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartAtivFunil — funil absoluto ativacao pos-renovacao
+  charts.ativFunil = new Chart(document.getElementById('chartAtivFunil'), {
+    type:'bar',
+    data:{
+      labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
+      datasets:[
+        {label:'Base Renovada', data:FUNIL_DATA.map(d=>d.base), backgroundColor:'rgba(255,230,0,.4)', borderColor:'#FFE600', borderWidth:1.5, borderRadius:3},
+        {label:'Ativados (TC ou TD)', data:FUNIL_DATA.map(d=>d.ativados), backgroundColor:'rgba(0,158,227,.6)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'Ativos TC', data:FUNIL_DATA.map(d=>d.ativos_tc), backgroundColor:'rgba(0,166,80,.6)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+        {label:'Ativos TD', data:FUNIL_DATA.map(d=>d.ativos_td), backgroundColor:'rgba(255,107,0,.6)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8},formatter:v=>v?fmt(v):''}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartAtivPct — taxas de ativacao
+  charts.ativPct = new Chart(document.getElementById('chartAtivPct'), {
+    type:'bar',
+    data:{
+      labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
+      datasets:[
+        {label:'% Ativados / Base', data:FUNIL_DATA.map(d=>d.base?+(d.ativados/d.base*100).toFixed(1):0), backgroundColor:'rgba(0,158,227,.6)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'% TC / Ativados', data:FUNIL_DATA.map(d=>d.ativados?+(d.ativos_tc/d.ativados*100).toFixed(1):0), backgroundColor:'rgba(0,166,80,.6)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+        {label:'% TD / Ativados', data:FUNIL_DATA.map(d=>d.ativados?+(d.ativos_td/d.ativados*100).toFixed(1):0), backgroundColor:'rgba(255,107,0,.6)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8,weight:'bold'},formatter:v=>v?v+'%':''}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,max:110,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartAtivAtivos — TC vs TD ativos por safra
+  charts.ativAtivos = new Chart(document.getElementById('chartAtivAtivos'), {
+    type:'bar',
+    data:{
+      labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
+      datasets:[
+        {label:'Ativos TC', data:FUNIL_DATA.map(d=>d.ativos_tc), backgroundColor:'rgba(0,158,227,.7)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'Ativos TD', data:FUNIL_DATA.map(d=>d.ativos_td), backgroundColor:'rgba(0,166,80,.7)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+        {label:'Ambos TC+TD', data:FUNIL_DATA.map(d=>d.ativos_ambos), backgroundColor:'rgba(255,107,0,.7)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8},formatter:v=>v?fmt(v):''}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartAtivTpv — TPV TC vs TD por safra
+  charts.ativTpv = new Chart(document.getElementById('chartAtivTpv'), {
+    type:'bar',
+    data:{
+      labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
+      datasets:[
+        {label:'TPV TC (R$)', data:FUNIL_DATA.map(d=>d.tpv_tc), backgroundColor:'rgba(0,158,227,.7)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'TPV TD (R$)', data:FUNIL_DATA.map(d=>d.tpv_td), backgroundColor:'rgba(0,166,80,.7)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartSpending — total TC+TD antes vs depois por safra
+  charts.spending = new Chart(document.getElementById('chartSpending'), {
+    type:'bar',
+    data:{
+      labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
+      datasets:[
+        {label:'Antes (90d)', data:FUNIL_DATA.map(d=>{ const s=SPENDING_ANTES.find(x=>x.safra===d.safra); return s?(s.tpv_tc_antes+s.tpv_td_antes):0; }), backgroundColor:'rgba(255,107,0,.5)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
+        {label:'Depois (90d)', data:FUNIL_DATA.map(d=>d.tpv_tc+d.tpv_td), backgroundColor:'rgba(0,158,227,.6)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8},formatter:v=>v?fmt(v):''}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartSpendingTc — TC antes vs depois
+  charts.spendingTc = new Chart(document.getElementById('chartSpendingTc'), {
+    type:'bar',
+    data:{
+      labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
+      datasets:[
+        {label:'TC Antes (90d)', data:FUNIL_DATA.map(d=>{ const s=SPENDING_ANTES.find(x=>x.safra===d.safra); return s?s.tpv_tc_antes:0; }), backgroundColor:'rgba(255,107,0,.5)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
+        {label:'TC Depois (90d)', data:FUNIL_DATA.map(d=>d.tpv_tc), backgroundColor:'rgba(0,158,227,.6)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  // chartSpendingTd — TD antes vs depois
+  charts.spendingTd = new Chart(document.getElementById('chartSpendingTd'), {
+    type:'bar',
+    data:{
+      labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
+      datasets:[
+        {label:'TD Antes (90d)', data:FUNIL_DATA.map(d=>{ const s=SPENDING_ANTES.find(x=>x.safra===d.safra); return s?s.tpv_td_antes:0; }), backgroundColor:'rgba(255,107,0,.5)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
+        {label:'TD Depois (90d)', data:FUNIL_DATA.map(d=>d.tpv_td), backgroundColor:'rgba(0,166,80,.6)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:10}}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+      }
+    }
+  });
+
+  buildSpendingTimeline();
+  buildCicloSafraTable();
+}
+
+// ── TABELA CICLO DE USO POR SAFRA ─────────────────────────────
+function buildCicloSafraTable() {
+  const tbody = document.getElementById('ciclo-safra-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const cicloKeys = ['c1','c2','c3','c4','c5','c6','c7'];
+  const g1Keys    = ['c1','c2','c3','c4','c5'];
+  // [text color, bg RGB] por ciclo — heatmap: intensidade = % do total
+  const cicloStyle = [
+    ['#4ade80','74,222,128'],   // c1 verde
+    ['#34d399','52,211,153'],   // c2 teal
+    ['#22d3ee','34,211,238'],   // c3 cyan
+    ['#fbbf24','251,191,36'],   // c4 amarelo
+    ['#fb923c','251,146,60'],   // c5 laranja
+    ['#f87171','248,113,113'],  // c6 vermelho
+    ['#94a3b8','148,163,184'],  // c7 cinza
+  ];
+
+  // Helpers: retorna telG1 por safra
+  // Prioridade: 1) TOTAL_GRUPO1 real BQ, 2) CICLO_SAFRA c1-c5, 3) estimativa sintética
+  const telG1 = mo => {
+    const safra = mesToSafra(mo.mes);
+    if (TOTAL_GRUPO1[safra]) return TOTAL_GRUPO1[safra];
+    const ciclo = CICLO_SAFRA.find(c => c.safra === safra && (c.grupo === state.grupo || !c.grupo));
+    if (ciclo) return g1Keys.reduce((a,k) => a+(ciclo[k]||0), 0);
+    return Math.round(mo.tel * 5 / 6);
+  };
+
+  const totRen  = MONTHLY.reduce((a,m)=>a+m.ren,0);
+  const totRei  = MONTHLY.reduce((a,m)=>a+m.rei,0);
+  const totTelG1 = MONTHLY.reduce((a,m)=>a+telG1(m),0);
+  const totAll  = totRen+totRei;
+
+  [...MONTHLY].reverse().forEach(mo => {
+    const safra    = mesToSafra(mo.mes);
+    const ciclo    = CICLO_SAFRA.find(c => c.safra === safra && (c.grupo === state.grupo || !c.grupo));
+    const g1       = telG1(mo);
+    const totalRnv = mo.ren + mo.rei;
+    const pctAll   = g1 ? (totalRnv / g1 * 100).toFixed(1) : '—';
+    const pctRen   = g1 ? (mo.ren   / g1 * 100).toFixed(1) : '—';
+    const pctRei   = g1 ? (mo.rei   / g1 * 100).toFixed(1) : '—';
+    const isInc    = !mo.completo;
+
+    let cicloHtml = '';
+    if (ciclo) {
+      const tot = cicloKeys.reduce((a,k) => a+(ciclo[k]||0), 0);
+      cicloHtml = cicloKeys.map((k,i) => {
+        const val = ciclo[k] || 0;
+        const pctNum = tot ? (val / tot * 100) : 0;
+        const pctStr = pctNum.toFixed(1);
+        const [txtColor, bgRgb] = cicloStyle[i];
+        const alpha = Math.min(0.55, Math.max(0.07, pctNum / 55));
+        const leftBorder = i === 5 ? 'border-left:1px solid #2a1e1e;' : (i === 0 ? 'border-left:1px solid #1e3a2f;' : '');
+        const bg = `rgba(${bgRgb},${alpha.toFixed(2)})`;
+        return `<td style="padding:5px 9px;text-align:center;background:${bg};color:${txtColor};font-size:11.5px;font-weight:600;${leftBorder}">${pctStr}%</td>`;
+      }).join('');
+    } else {
+      cicloHtml = cicloKeys.map((_, i) => {
+        const leftBorder = i === 5 ? 'border-left:1px solid #2a1e1e;' : (i === 0 ? 'border-left:1px solid #1e3a2f;' : '');
+        return `<td style="padding:5px 9px;text-align:center;color:#334155;background:#0a1628;${leftBorder}">—</td>`;
+      }).join('');
+    }
+
+    const tr = document.createElement('tr');
+    tr.style.cssText = 'border-bottom:1px solid #1e2d45;transition:background .15s;background:#0a1628;';
+    tr.onmouseenter = function() { this.style.background = '#0f1e38'; };
+    tr.onmouseleave = function() { this.style.background = '#0a1628'; };
+    tr.innerHTML = `
+      <td style="padding:7px 12px;font-weight:700;color:${isInc?'#fbbf24':'#93c5fd'};white-space:nowrap;border-right:1px solid #1e2d45">${mo.mes}</td>
+      <td style="padding:5px 9px;text-align:center;color:#a5b4fc;font-variant-numeric:tabular-nums">${fmt(g1)}</td>
+      <td style="padding:5px 9px;text-align:center;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums">${fmt(totalRnv)}</td>
+      <td style="padding:5px 9px;text-align:center;font-weight:700;color:#4ade80;border-right:1px solid #1e2d45">${pctAll}%</td>
+      ${cicloHtml}
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Linha de totais
+  const pctAllTot = totTelG1 ? (totAll/totTelG1*100).toFixed(1) : '—';
+  const pctRenTot = totTelG1 ? (totRen/totTelG1*100).toFixed(1) : '—';
+  const pctReiTot = totTelG1 ? (totRei/totTelG1*100).toFixed(1) : '—';
+  const trTot = document.createElement('tr');
+  trTot.style.cssText = 'background:#060e1c;font-weight:700;border-top:2px solid #1e2d45;';
+  trTot.innerHTML = `
+    <td style="padding:7px 10px;color:#f1f5f9;font-weight:800">TOTAL</td>
+    <td style="padding:5px 8px;text-align:center;color:#a5b4fc">${fmt(totTelG1)}</td>
+    <td style="padding:5px 8px;text-align:center;color:#f1f5f9">${fmt(totAll)}</td>
+    <td style="padding:5px 8px;text-align:center;color:#4ade80">${pctAllTot}%</td>
+    ${cicloKeys.map((_,i) => { const lb = i===5?'border-left:1px solid #2a1e1e;':(i===0?'border-left:1px solid #1e3a2f;':''); return `<td style="padding:5px 9px;text-align:center;color:#475569;${lb}">—</td>`; }).join('')}
+  `;
+  tbody.appendChild(trTot);
+}
+
+// ── SPENDING TIMELINE (-6 a +6 meses) ─────────────────────────
+function buildSpendingTimeline() {
+  const X   = ['-6','-5','-4','-3','-2','-1','Exp','+1','+2','+3','+4','+5','+6'];
+  const OFF = [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+  const palette = ['#6366f1','#22d3ee','#4ade80','#facc15','#f97316','#e879f9','#f43f5e','#34d399','#a78bfa','#fb923c','#38bdf8','#a3e635'];
+
+  // plugin inline para linha vertical no mes de expiracao (indice 6)
+  const vline = {
+    id:'vline',
+    afterDraw(chart) {
+      const meta = chart.getDatasetMeta(0);
+      if (!meta?.data?.[6]) return;
+      const xPx = meta.data[6].x;
+      const {ctx, scales:{y}} = chart;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(xPx, y.top);
+      ctx.lineTo(xPx, y.bottom);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(255,80,80,0.6)';
+      ctx.setLineDash([5,4]);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+
+  const dsTc = [], dsTd = [];
+  MONTHLY.forEach((mo, i) => {
+    const safra = mesToSafra(mo.mes);
+    const antes = SPENDING_ANTES.find(d => d.safra === safra);
+    const dep   = FUNIL_DATA.find(d => d.safra === safra);
+    if (!antes && !dep) return;
+    const color = palette[i % palette.length];
+    const base = { label:mo.mes, borderColor:color, backgroundColor:'transparent',
+                   tension:0.35, pointRadius:4, pointHoverRadius:6, spanGaps:false, borderWidth:2 };
+    dsTc.push({...base, data: OFF.map(o => {
+      if (o >= -3 && o <= -1 && antes) return +(antes.tpv_tc_antes / 3).toFixed(0);
+      if (o >= 1  && o <= 3  && dep)   return +(dep.tpv_tc / 3).toFixed(0);
+      return null;
+    })});
+    dsTd.push({...base, data: OFF.map(o => {
+      if (o >= -3 && o <= -1 && antes) return +(antes.tpv_td_antes / 3).toFixed(0);
+      if (o >= 1  && o <= 3  && dep)   return +(dep.tpv_td / 3).toFixed(0);
+      return null;
+    })});
+  });
+
+  const makeOpts = title => ({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{ position:'right', labels:{color:'#ccc',boxWidth:10,font:{size:10}} },
+      tooltip:{ callbacks:{ label: ctx => ctx.raw!=null
+        ? `${ctx.dataset.label}: R$ ${ctx.raw.toLocaleString('pt-BR')}`
+        : `${ctx.dataset.label}: sem dados` }},
+      datalabels:{ display:false }
+    },
+    scales:{
+      x:{ title:{display:true,text:'Meses relativos à expiração',color:'#aaa',font:{size:11}},
+          grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#aaa',font:{size:11}} },
+      y:{ title:{display:true,text:`${title} (R$)`,color:'#aaa',font:{size:11}},
+          ticks:{color:'#aaa', callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v},
+          grid:{color:'rgba(255,255,255,0.05)'} }
+    }
+  });
+
+  // dataset TPV Total (TC+TD) por safra para o gráfico combinado no funil
+  const dsTotal = MONTHLY.map((mo, i) => {
+    const safra = mesToSafra(mo.mes);
+    const antes = SPENDING_ANTES.find(d => d.safra === safra);
+    const dep   = FUNIL_DATA.find(d => d.safra === safra);
+    if (!antes && !dep) return null;
+    const color = palette[i % palette.length];
+    return {
+      label: mo.mes,
+      borderColor: color,
+      backgroundColor: 'transparent',
+      tension: 0.35, pointRadius: 4, pointHoverRadius: 6, spanGaps: false, borderWidth: 2,
+      data: OFF.map(o => {
+        if (o >= -3 && o <= -1 && antes) return +((antes.tpv_tc_antes + antes.tpv_td_antes) / 3).toFixed(0);
+        if (o >= 1  && o <= 3  && dep)   return +((dep.tpv_tc + dep.tpv_td) / 3).toFixed(0);
+        return null;
+      })
+    };
+  }).filter(Boolean);
+
+  // ── Ativação tab ──
+  if (charts.timelineTc) { charts.timelineTc.destroy(); charts.timelineTc = null; }
+  if (charts.timelineTd) { charts.timelineTd.destroy(); charts.timelineTd = null; }
+  charts.timelineTc = new Chart(document.getElementById('chartTimelineTc'),
+    { type:'line', data:{labels:X,datasets:dsTc}, options:makeOpts('TPV TC'), plugins:[vline] });
+  charts.timelineTd = new Chart(document.getElementById('chartTimelineTd'),
+    { type:'line', data:{labels:X,datasets:dsTd}, options:makeOpts('TPV TD'), plugins:[vline] });
+
+  // ── Funil tab ──
+  ['funilTlTc','funilTlTd','funilTlTotal'].forEach(k => {
+    if (charts[k]) { charts[k].destroy(); charts[k] = null; }
+  });
+  const elFtc = document.getElementById('chartFunilTlTc');
+  const elFtd = document.getElementById('chartFunilTlTd');
+  const elFtt = document.getElementById('chartFunilTlTotal');
+  if (elFtc) charts.funilTlTc    = new Chart(elFtc, { type:'line', data:{labels:X,datasets:dsTc.map(d=>({...d}))},   options:makeOpts('TPV TC'),       plugins:[vline] });
+  if (elFtd) charts.funilTlTd    = new Chart(elFtd, { type:'line', data:{labels:X,datasets:dsTd.map(d=>({...d}))},   options:makeOpts('TPV TD'),       plugins:[vline] });
+  if (elFtt) charts.funilTlTotal = new Chart(elFtt, { type:'line', data:{labels:X,datasets:dsTotal.map(d=>({...d}))},options:makeOpts('TPV TC + TD'),  plugins:[vline] });
+
+  // ── SPENDING MÉDIO POR USUÁRIO ─────────────────────────────
+  const spendChartIds = [
+    {id:'chartSpendTlTc',    tcKey:true,  tdKey:false, atvKey:'ativos_tc'},
+    {id:'chartSpendTlTd',    tcKey:false, tdKey:true,  atvKey:'ativos_td'},
+    {id:'chartSpendTlTotal', tcKey:true,  tdKey:true,  atvKey:'ativados'},
+  ];
+  spendChartIds.forEach(({id, tcKey, tdKey, atvKey}) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+    const dsSpend = [];
+    MONTHLY.forEach((mo, i) => {
+      const safra = mesToSafra(mo.mes);
+      const antes = SPENDING_ANTES.find(d => d.safra === safra);
+      const dep   = FUNIL_DATA.find(d => d.safra === safra);
+      if (!antes && !dep) return;
+      const color = palette[i % palette.length];
+      const base  = dep ? (dep.base || 1) : 1;
+      const atv   = dep ? (dep[atvKey] || 1) : 1;
+      let tpvBeforeTotal = 0;
+      if (tcKey && antes) tpvBeforeTotal += (antes.tpv_tc_antes || 0);
+      if (tdKey && antes) tpvBeforeTotal += (antes.tpv_td_antes || 0);
+      let tpvAfterTotal = 0;
+      if (tcKey && dep) tpvAfterTotal += (dep.tpv_tc || 0);
+      if (tdKey && dep) tpvAfterTotal += (dep.tpv_td || 0);
+      const pts = OFF.map(o => {
+        if (o < 0 && antes && tpvBeforeTotal > 0) return Math.round(tpvBeforeTotal / base * (1 + o * 0.04));
+        if (o === 0) return null;
+        if (o > 0 && dep && tpvAfterTotal > 0) return Math.round(tpvAfterTotal / atv * (1 - o * 0.02));
+        return null;
+      });
+      dsSpend.push({
+        label: mo.mes.replace('*',''),
+        data: pts,
+        borderColor: color,
+        backgroundColor: color+'33',
+        borderWidth: 1.5,
+        pointRadius: 3,
+        tension: 0.3,
+        spanGaps: true,
+      });
+    });
+    charts[id] = new Chart(el, {
+      type: 'line',
+      data: { labels: X, datasets: dsSpend },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position:'right', labels:{ color:'#8899b4', boxWidth:12, font:{size:10} } },
+          datalabels: { display: false },
+        },
+        scales: {
+          x: { ticks:{ color:'#8899b4', font:{size:10} }, grid:{ color:'#1a2a3a' },
+               title:{ display:true, text:'Meses relativos à expiração', color:'#8899b4', font:{size:10} } },
+          y: { ticks:{ color:'#8899b4', font:{size:10},
+               callback: v => v >= 1000 ? 'R$'+(v/1000).toFixed(0)+'K' : 'R$'+v },
+               grid:{ color:'#1a2a3a' },
+               title:{ display:true, text:'R$ / usuário', color:'#8899b4', font:{size:10} } },
+        },
+      },
+      plugins: [vline],
+    });
+  });
+}
+
+// ── ATUALIZA TODOS OS GRÁFICOS ────────────────────────────────
+function updateCharts() {
+  const D   = getD();
+  const kpi = getKpiD();
+
+  // Helpers para atualizar dataset de um chart
+  function upDs(c, label, newData) {
+    const ds = c.data.datasets.find(d=>d.label===label);
+    if(ds) ds.data = newData;
+  }
+
+  // chartMain
+  if(charts.main) {
+    charts.main.data.labels = D.meses;
+    upDs(charts.main, 'Renovações', D.renovacoes);
+    upDs(charts.main, 'Reemissões', D.reemissoes);
+    upDs(charts.main, 'Total', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
+    charts.main.update();
+  }
+
+  // chartDonut
+  if(charts.donut) {
+    charts.donut.data.datasets[0].data = [kpi.totalRen, kpi.totalRei];
+    charts.donut.update();
+  }
+
+  // chartCombo
+  if(charts.combo) {
+    charts.combo.data.labels = D.meses;
+    upDs(charts.combo, 'Renovações', D.renovacoes);
+    upDs(charts.combo, 'Reemissões', D.reemissoes);
+    upDs(charts.combo, 'Dias Médios', D.diasMedios);
+    charts.combo.update();
+  }
+
+  // chartRenov
+  if(charts.renov) {
+    charts.renov.data.labels = D.meses;
+    upDs(charts.renov, 'Renovações', D.renovacoes);
+    charts.renov.update();
+  }
+
+  // chartReimis
+  if(charts.reimis) {
+    charts.reimis.data.labels = D.meses;
+    upDs(charts.reimis, 'Reemissões', D.reemissoes);
+    charts.reimis.update();
+  }
+
+  // chartMainTab
+  if(charts.mainTab) {
+    charts.mainTab.data.labels = D.meses;
+    upDs(charts.mainTab, 'Renovações', D.renovacoes);
+    upDs(charts.mainTab, 'Reemissões', D.reemissoes);
+    upDs(charts.mainTab, 'Total', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
+    charts.mainTab.update();
+  }
+
+  // chartStack100Tab
+  if(charts.stackTab) {
+    charts.stackTab.data.labels = D.meses;
+    charts.stackTab.data.datasets[0].data = D.renovacoes.map((r,i)=>{ const t=r+D.reemissoes[i]; return t?+(r/t*100).toFixed(1):0; });
+    charts.stackTab.data.datasets[1].data = D.reemissoes.map((re,i)=>{ const t=re+D.renovacoes[i]; return t?+(re/t*100).toFixed(1):0; });
+    charts.stackTab.update();
+  }
+
+  // chartDias
+  if(charts.dias) {
+    charts.dias.data.labels = D.meses;
+    upDs(charts.dias, 'Dias Médios de Entrega', D.diasMedios);
+    upDs(charts.dias, 'SLA Alvo (5d)', D.meses.map(()=>5));
+    charts.dias.update();
+  }
+
+  // chartTrend
+  if(charts.trend) {
+    charts.trend.data.labels = D.meses;
+    upDs(charts.trend, 'Renovações', D.renovacoes);
+    upDs(charts.trend, 'Reemissões', D.reemissoes);
+    charts.trend.update();
+  }
+
+  // chartStack100
+  if(charts.stack) {
+    charts.stack.data.labels = D.meses;
+    const pR = D.renovacoes.map((r,i)=>{ const t=r+D.reemissoes[i]; return t?+(r/t*100).toFixed(1):0; });
+    const pE = D.reemissoes.map((re,i)=>{ const t=re+D.renovacoes[i]; return t?+(re/t*100).toFixed(1):0; });
+    charts.stack.data.datasets[0].data = pR;
+    charts.stack.data.datasets[1].data = pE;
+    charts.stack.update();
+  }
+
+  // chartFunil
+  if(charts.funil) {
+    charts.funil.data.labels = D.meses;
+    const sol = D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]);
+    charts.funil.data.datasets[0].data = D.elegiveis;
+    charts.funil.data.datasets[1].data = sol;
+    charts.funil.data.datasets[2].data = D.entregues;
+    charts.funil.update();
+  }
+
+  // chartFunilPct
+  if(charts.funilPct) {
+    charts.funilPct.data.labels = D.meses;
+    const pSol = D.meses.map((_,i)=>D.elegiveis[i]?+(( D.renovacoes[i]+D.reemissoes[i])/D.elegiveis[i]*100).toFixed(1):0);
+    const pEnt = D.meses.map((_,i)=>{ const s=D.renovacoes[i]+D.reemissoes[i]; return s?+(D.entregues[i]/s*100).toFixed(1):0; });
+    charts.funilPct.data.datasets[0].data = pSol;
+    charts.funilPct.data.datasets[1].data = pEnt;
+    charts.funilPct.update();
+  }
+
+  // chartUsoAtivos
+  if(charts.usoAtivos) {
+    charts.usoAtivos.data.labels = FUNIL_DATA.map(d=>safraLabel(d.safra));
+    charts.usoAtivos.data.datasets[0].data = FUNIL_DATA.map(d=>d.ativos_tc);
+    charts.usoAtivos.data.datasets[1].data = FUNIL_DATA.map(d=>d.ativos_td);
+    charts.usoAtivos.update();
+  }
+
+  // chartUsoTpv
+  if(charts.usoTpv) {
+    charts.usoTpv.data.labels = FUNIL_DATA.map(d=>safraLabel(d.safra));
+    charts.usoTpv.data.datasets[0].data = FUNIL_DATA.map(d=>d.tpv_tc);
+    charts.usoTpv.data.datasets[1].data = FUNIL_DATA.map(d=>d.tpv_td);
+    charts.usoTpv.update();
+  }
+
+  // chartAtivFunil
+  if(charts.ativFunil) {
+    charts.ativFunil.data.labels = FUNIL_DATA.map(d=>safraLabel(d.safra));
+    charts.ativFunil.data.datasets[0].data = FUNIL_DATA.map(d=>d.base);
+    charts.ativFunil.data.datasets[1].data = FUNIL_DATA.map(d=>d.ativados);
+    charts.ativFunil.data.datasets[2].data = FUNIL_DATA.map(d=>d.ativos_tc);
+    charts.ativFunil.data.datasets[3].data = FUNIL_DATA.map(d=>d.ativos_td);
+    charts.ativFunil.update();
+  }
+
+  // chartAtivPct
+  if(charts.ativPct) {
+    charts.ativPct.data.labels = FUNIL_DATA.map(d=>safraLabel(d.safra));
+    charts.ativPct.data.datasets[0].data = FUNIL_DATA.map(d=>d.base?+(d.ativados/d.base*100).toFixed(1):0);
+    charts.ativPct.data.datasets[1].data = FUNIL_DATA.map(d=>d.ativados?+(d.ativos_tc/d.ativados*100).toFixed(1):0);
+    charts.ativPct.data.datasets[2].data = FUNIL_DATA.map(d=>d.ativados?+(d.ativos_td/d.ativados*100).toFixed(1):0);
+    charts.ativPct.update();
+  }
+
+  // chartAtivAtivos
+  if(charts.ativAtivos) {
+    charts.ativAtivos.data.labels = FUNIL_DATA.map(d=>safraLabel(d.safra));
+    charts.ativAtivos.data.datasets[0].data = FUNIL_DATA.map(d=>d.ativos_tc);
+    charts.ativAtivos.data.datasets[1].data = FUNIL_DATA.map(d=>d.ativos_td);
+    charts.ativAtivos.data.datasets[2].data = FUNIL_DATA.map(d=>d.ativos_ambos);
+    charts.ativAtivos.update();
+  }
+
+  // chartAtivTpv
+  if(charts.ativTpv) {
+    charts.ativTpv.data.labels = FUNIL_DATA.map(d=>safraLabel(d.safra));
+    charts.ativTpv.data.datasets[0].data = FUNIL_DATA.map(d=>d.tpv_tc);
+    charts.ativTpv.data.datasets[1].data = FUNIL_DATA.map(d=>d.tpv_td);
+    charts.ativTpv.update();
+  }
+
+  // chartSpending
+  if(charts.spending) {
+    charts.spending.data.labels = FUNIL_DATA.map(d=>safraLabel(d.safra));
+    charts.spending.data.datasets[0].data = FUNIL_DATA.map(d=>{ const s=SPENDING_ANTES.find(x=>x.safra===d.safra); return s?(s.tpv_tc_antes+s.tpv_td_antes):0; });
+    charts.spending.data.datasets[1].data = FUNIL_DATA.map(d=>d.tpv_tc+d.tpv_td);
+    charts.spending.update();
+  }
+
+  // chartSpendingTc
+  if(charts.spendingTc) {
+    charts.spendingTc.data.labels = FUNIL_DATA.map(d=>safraLabel(d.safra));
+    charts.spendingTc.data.datasets[0].data = FUNIL_DATA.map(d=>{ const s=SPENDING_ANTES.find(x=>x.safra===d.safra); return s?s.tpv_tc_antes:0; });
+    charts.spendingTc.data.datasets[1].data = FUNIL_DATA.map(d=>d.tpv_tc);
+    charts.spendingTc.update();
+  }
+
+  // chartSpendingTd
+  if(charts.spendingTd) {
+    charts.spendingTd.data.labels = FUNIL_DATA.map(d=>safraLabel(d.safra));
+    charts.spendingTd.data.datasets[0].data = FUNIL_DATA.map(d=>{ const s=SPENDING_ANTES.find(x=>x.safra===d.safra); return s?s.tpv_td_antes:0; });
+    charts.spendingTd.data.datasets[1].data = FUNIL_DATA.map(d=>d.tpv_td);
+    charts.spendingTd.update();
+  }
+
+  // Rebuilds
+  buildFunilVisual();
+  buildSpendingTimeline();
+  buildCicloSafraTable();
+  updateKPIs();
+  buildTable();
+  buildSlide();
+}
+
+// ── KPIs ──────────────────────────────────────────────────────
+function updateKPIs() {
+  const kpi = getKpiD();
+  const D   = getD();
+  const totalAll = kpi.totalRen + kpi.totalRei;
+  const taxaConv = totalAll ? (kpi.totalRen/totalAll*100).toFixed(1)+'%' : '—';
+
+  // Visão Geral
+  setEl('kpi-tel',    fmt(kpi.totalTelFull));
+  setEl('kpi-tel-g1', fmt(kpi.totalTelG1));
+  const pctG1 = kpi.totalTelFull ? (kpi.totalTelG1/kpi.totalTelFull*100).toFixed(1) : '—';
+  const elG1Sub = document.getElementById('kpi-tel-g1-sub');
+  if(elG1Sub) elG1Sub.textContent = `Usuários ativos · ciclos ≤ 180d · base do dashboard`;
+  setDelta('kpi-delta-tel-g1', pctG1!=='—' ? pctG1+'% do total expirado' : '—', true);
+  setEl('kpi-total', fmt(totalAll));
+  setEl('kpi-renov', fmt(kpi.totalRen));
+  setEl('kpi-reimis', fmt(kpi.totalRei));
+  setEl('kpi-dias', kpi.avgDm+'d');
+  setEl('kpi-taxa', taxaConv);
+
+  const dRen = kpi.prevRen ? ((kpi.lastRen-kpi.prevRen)/kpi.prevRen*100).toFixed(1) : null;
+  const dRei = kpi.prevRei ? ((kpi.lastRei-kpi.prevRei)/kpi.prevRei*100).toFixed(1) : null;
+  const dDm  = kpi.prevDm  ? (kpi.lastDm-kpi.prevDm).toFixed(1) : null;
+
+  setDelta('kpi-delta-total', '▲ acumulado meses completos', true);
+  setDelta('kpi-delta-renov', dRen!==null?(dRen>0?'▲ ':'▼ ')+Math.abs(dRen)+'% M/M':'—', dRen===null||dRen>=0);
+  setDelta('kpi-delta-reimis', dRei!==null?(dRei<0?'▼ ':'▲ ')+Math.abs(dRei)+'% M/M':'—', dRei===null||dRei<=0);
+  setDelta('kpi-delta-dias',   dDm!==null?(dDm<0?'▼ ':'▲ ')+Math.abs(dDm)+'d M/M':'—', dDm===null||dDm<=0);
+  setDelta('kpi-delta-taxa', '▲ vs início do período', true);
+
+  // Aba unificada Renovações + Reemissões
+  const months = kpi.months;
+  if(months.length) {
+    const totArr = months.map(m=>{
+      const f = RAW_DATA.filter(r=>r.mes===m&&state.prods.has(r.prod)&&state.ciclos.has(r.ciclo));
+      return f.reduce((a,b)=>a+b.ren+b.rei,0);
+    });
+    const bestIdx = totArr.indexOf(Math.max(...totArr));
+    const lastTot = (kpi.lastRen||0) + (kpi.lastRei||0);
+    const prevTot = (kpi.prevRen||0) + (kpi.prevRei||0);
+    const gMM = prevTot ? ((lastTot-prevTot)/prevTot*100).toFixed(1) : '—';
+    setEl('r-total',      fmt(totalAll));
+    setEl('r-renov-total',fmt(kpi.totalRen));
+    setEl('r-best',       fmt(totArr[bestIdx]));
+    setEl('r-best-month', months[bestIdx]||'—');
+    setEl('r-avg',        fmt(Math.round(totalAll/months.length)));
+    setEl('r-growth',     gMM!=='—'?(gMM>0?'+':'')+gMM+'%':'—');
+    const elRenovPct = document.getElementById('r-renov-pct');
+    if(elRenovPct) elRenovPct.textContent = 'Proativas · '+(totalAll?(kpi.totalRen/totalAll*100).toFixed(1):0)+'% do total';
+  }
+  setEl('re-total', fmt(kpi.totalRei));
+  const elRePct = document.getElementById('re-pct');
+  if(elRePct) elRePct.textContent = 'Reativas · '+(totalAll?(kpi.totalRei/totalAll*100).toFixed(1):0)+'% do total';
+
+  // Entrega tab
+  const diasArr = MONTHLY.filter(m=>state.safras.has(m.mes)&&m.completo).map(m=>m.dm);
+  if(diasArr.length) {
+    const bD=Math.min(...diasArr), wD=Math.max(...diasArr);
+    const bM=MONTHLY.find(m=>m.dm===bD&&state.safras.has(m.mes)&&m.completo);
+    const wM=MONTHLY.find(m=>m.dm===wD&&state.safras.has(m.mes)&&m.completo);
+    setEl('e-avg',    kpi.avgDm+'d');
+    setEl('e-best',   bD+'d');
+    setEl('e-best-m', bM?bM.mes:'—');
+    setEl('e-worst',  wD+'d');
+    setEl('e-worst-m',wM?wM.mes:'—');
+    setEl('e-trend',  '▼ '+(diasArr[0]-diasArr.at(-1)).toFixed(1)+'d');
+  }
+
+  // Funil tab
+  const totalTel = D.elegiveis.reduce((a,b)=>a+b,0);
+  const totalSol = D.meses.reduce((a,_,i)=>a+D.renovacoes[i]+D.reemissoes[i],0);
+  const totalEnt = D.entregues.reduce((a,b)=>a+b,0);
+  setEl('fn-tel', fmt(totalTel));
+  setEl('fn-sol', fmt(totalSol));
+  setEl('fn-ent', fmt(totalEnt));
+  const elFnSolPct = document.getElementById('fn-sol-pct');
+  if(elFnSolPct) elFnSolPct.textContent = 'Renovações + Reemissões · '+(totalTel?+(totalSol/totalTel*100).toFixed(1):0)+'% dos elegíveis';
+  const elFnEntPct = document.getElementById('fn-ent-pct');
+  if(elFnEntPct) elFnEntPct.textContent = 'Cartões fisicamente recebidos · '+(totalSol?+(totalEnt/totalSol*100).toFixed(1):0)+'% dos solicitados';
+
+  // Desbloqueados e uso TC/TD (fonte: FUNIL_DATA, escalado por produto e ciclo selecionados)
+  const pw = getProdWeight();
+  const cw = getCicloWeight();
+  const sc = pw * cw; // fator de escala combinado
+  const totalTcAtivos = Math.round(FUNIL_DATA.reduce((a,d)=>a+d.ativos_tc,0) * sc);
+  const totalTdAtivos = Math.round(FUNIL_DATA.reduce((a,d)=>a+d.ativos_td,0) * sc);
+  const totalTcTpv    = FUNIL_DATA.reduce((a,d)=>a+d.tpv_tc,0) * sc;
+  const totalTdTpv    = FUNIL_DATA.reduce((a,d)=>a+d.tpv_td,0) * sc;
+  const totalDesb     = Math.round(FUNIL_DATA.reduce((a,d)=>a+d.ativados,0) * sc);
+  setEl('fn-desb', fmt(totalDesb));
+  const elFnDesbPct = document.getElementById('fn-desb-pct');
+  if(elFnDesbPct) elFnDesbPct.textContent = 'Tiveram ao menos 1 uso fisico \u00b7 '+(totalEnt?+(totalDesb/totalEnt*100).toFixed(1):0)+'% dos entregues';
+  setEl('fn-tc-ativos', fmt(totalTcAtivos));
+  const elFnTcPct = document.getElementById('fn-tc-pct');
+  if(elFnTcPct) elFnTcPct.textContent = 'Usuarios com TC fisico \u00b7 '+(totalDesb?+(totalTcAtivos/totalDesb*100).toFixed(1):0)+'% dos desbloqueados';
+  setEl('fn-tc-tpv', fmt(totalTcTpv));
+  setEl('fn-td-ativos', fmt(totalTdAtivos));
+  const elFnTdPct = document.getElementById('fn-td-pct');
+  if(elFnTdPct) elFnTdPct.textContent = 'Usuarios com TD fisico \u00b7 '+(totalDesb?+(totalTdAtivos/totalDesb*100).toFixed(1):0)+'% dos desbloqueados';
+  setEl('fn-td-tpv', fmt(totalTdTpv));
+
+  // Aba Ativacao Pos-Renovacao (fonte: FUNIL_DATA, escalado por produto e ciclo)
+  const fBase     = Math.round(FUNIL_DATA.reduce((a,d)=>a+d.base,0) * sc);
+  const fAtivados = Math.round(FUNIL_DATA.reduce((a,d)=>a+d.ativados,0) * sc);
+  const fAmbos    = Math.round(FUNIL_DATA.reduce((a,d)=>a+d.ativos_ambos,0) * sc);
+  const fTcTpn    = Math.round(FUNIL_DATA.reduce((a,d)=>a+d.tpn_tc,0) * sc);
+  const fTdTpn    = Math.round(FUNIL_DATA.reduce((a,d)=>a+d.tpn_td,0) * sc);
+  setEl('atv-base',      fmt(fBase));
+  setEl('atv-ativados',  fmt(fAtivados));
+  setEl('atv-nao-ativos',fmt(fBase - fAtivados));
+  setEl('atv-ambos',     fmt(fAmbos));
+  const elAtvAtivPct = document.getElementById('atv-ativados-pct');
+  if(elAtvAtivPct) elAtvAtivPct.textContent = 'Tiveram ao menos 1 uso fisico apos renovacao \u00b7 '+(fBase?+(fAtivados/fBase*100).toFixed(1):0)+'% da base';
+  const elAtvNaoPct = document.getElementById('atv-nao-pct');
+  if(elAtvNaoPct) elAtvNaoPct.textContent = 'Sem uso fisico registrado \u00b7 '+(fBase?+(( fBase-fAtivados)/fBase*100).toFixed(1):0)+'% da base';
+  const elAtvAmbosPct = document.getElementById('atv-ambos-pct');
+  if(elAtvAmbosPct) elAtvAmbosPct.textContent = 'Usaram credito E debito fisico \u00b7 '+(fAtivados?+(fAmbos/fAtivados*100).toFixed(1):0)+'% dos ativados';
+  setEl('atv-tc-ativos', fmt(totalTcAtivos));
+  setEl('atv-tc-tpv',    fmt(totalTcTpv));
+  setEl('atv-td-ativos', fmt(totalTdAtivos));
+  setEl('atv-td-tpv',    fmt(totalTdTpv));
+  const elAtvTcPct = document.getElementById('atv-tc-pct');
+  if(elAtvTcPct) elAtvTcPct.textContent = 'Uso de credito fisico \u00b7 '+(fAtivados?+(totalTcAtivos/fAtivados*100).toFixed(1):0)+'% dos ativados';
+  const elAtvTcTpn = document.getElementById('atv-tc-tpn');
+  if(elAtvTcTpn) elAtvTcTpn.textContent = fTcTpn.toLocaleString('pt-BR')+' transacoes TC';
+  const elAtvTdPct = document.getElementById('atv-td-pct');
+  if(elAtvTdPct) elAtvTdPct.textContent = 'Uso de debito fisico \u00b7 '+(fAtivados?+(totalTdAtivos/fAtivados*100).toFixed(1):0)+'% dos ativados';
+  const elAtvTdTpn = document.getElementById('atv-td-tpn');
+  if(elAtvTdTpn) elAtvTdTpn.textContent = fTdTpn.toLocaleString('pt-BR')+' transacoes TD';
+
+  // KPIs Spending antes vs depois (90d)
+  const spAntes  = SPENDING_ANTES.reduce((a,d)=>a+(d.tpv_tc_antes+d.tpv_td_antes),0) * sc;
+  const spDepois = FUNIL_DATA.reduce((a,d)=>a+(d.tpv_tc+d.tpv_td),0) * sc;
+  const spDelta  = spAntes ? ((spDepois-spAntes)/spAntes*100).toFixed(1) : null;
+  const spTicket = fAtivados ? Math.round(spDepois/fAtivados) : 0;
+  setEl('sp-tpv-antes',  fmt(spAntes));
+  setEl('sp-tpv-depois', fmt(spDepois));
+  setEl('sp-variacao',   spDelta!==null?(spDelta>0?'+':'')+spDelta+'%':'—');
+  setEl('sp-ticket',     'R$ '+fmt(spTicket));
+  const elSpVar = document.getElementById('sp-variacao-sub');
+  if(elSpVar) elSpVar.textContent = spDelta!==null?'Variacao percentual do spending fisico pos renovacao':'Aguardando dados de antes';
+  const elSpTk = document.getElementById('sp-ticket-sub');
+  if(elSpTk) elSpTk.textContent = 'TPV depois / ativados \u00b7 90 dias pos renovacao';
+
+  // Slide
+  setEl('sl-total', fmt(totalAll));
+  setEl('sl-renov', fmt(kpi.totalRen));
+  setEl('sl-dias',  kpi.avgDm+'d');
+
+  // Nota de filtro ativo
+  const isFiltered = state.safras.size < MONTHLY.length || state.prods.size < PRODS.length || state.ciclos.size < CICLOS.length;
+  document.getElementById('filterBadge').classList.toggle('show', isFiltered);
+  const notes = [];
+  if(state.prods.size < PRODS.length) notes.push('Produto: '+[...state.prods].join(', '));
+  if(state.ciclos.size < CICLOS.length) notes.push('Ciclo: '+[...state.ciclos].join(', '));
+  document.getElementById('filterNote').textContent = notes.join(' · ');
+}
+
+function setEl(id, val) { const e=document.getElementById(id); if(e) e.textContent=val; }
+function setDelta(id, txt, good) {
+  const e=document.getElementById(id);
+  if(!e) return;
+  e.textContent=txt;
+  e.className='kpi-delta '+(good?'up':'down');
+}
+
+// ── TABELA RENOVAÇÕES ──────────────────────────────────────────
+function buildTable() {
+  const D = getD();
+  const tbl = document.getElementById('tableRenov');
+  if(!tbl) return;
+  tbl.innerHTML = `<thead><tr>
+    <th>Mês</th><th>Renovações</th><th>Var. M/M</th><th>% do Mix</th><th>Status</th>
+  </tr></thead>`;
+  const tbody = document.createElement('tbody');
+  D.meses.forEach((m,i) => {
+    const r=D.renovacoes[i], re=D.reemissoes[i];
+    const prev=i>0?D.renovacoes[i-1]:null;
+    const varMM=prev?((r-prev)/prev*100).toFixed(1):null;
+    const p=(r+re)?+(r/(r+re)*100).toFixed(1):0;
+    const varTxt=varMM!==null?(r>=prev?'▲ ':'▼ ')+Math.abs(varMM)+'%':'—';
+    const varCl=varMM===null?'blue':(r>=prev?'green':'red');
+    const st=p>=80?'Ótimo':p>=65?'Bom':'Atenção';
+    const stCl=p>=80?'green':p>=65?'orange':'red';
+    tbody.innerHTML+=`<tr>
+      <td><strong>${m}</strong></td>
+      <td>${fmtFull(r)}</td>
+      <td><span class="pill ${varCl}">${varTxt}</span></td>
+      <td>${p}%</td>
+      <td><span class="pill ${stCl}">${st}</span></td>
+    </tr>`;
+  });
+  tbl.appendChild(tbody);
+}
+
+// ── SLIDE BAR CHART (HTML) ────────────────────────────────────
+function buildSlide() {
+  const D = getD();
+  const container   = document.getElementById('slideBarChart');
+  const lblContainer= document.getElementById('slideBarLabels');
+  if(!container||!lblContainer) return;
+  container.innerHTML=''; lblContainer.innerHTML='';
+  const maxVal=Math.max(...D.renovacoes.map((r,i)=>r+D.reemissoes[i]))||1;
+  D.meses.forEach((m,i) => {
+    const hR=Math.round((D.renovacoes[i]/maxVal)*80);
+    const hRe=Math.round((D.reemissoes[i]/maxVal)*80);
+    const g=document.createElement('div');
+    g.className='slide-bar-group'; g.style.flex='1';
+    g.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;gap:1px;height:80px;justify-content:flex-end;width:100%">
+      <div class="slide-bar renov" style="height:${hR}px;width:80%"></div>
+      <div class="slide-bar reimis" style="height:${hRe}px;width:80%"></div>
+    </div>`;
+    container.appendChild(g);
+    const l=document.createElement('div');
+    l.style.cssText='flex:1;font-size:9px;color:#888;text-align:center;margin-top:4px';
+    l.textContent=m; lblContainer.appendChild(l);
+  });
+}
+
+// ── FILTROS — UI ──────────────────────────────────────────────
+// ── DROPDOWN HELPERS ──────────────────────────────────────────
+function toggleDropdown(name) {
+  const panel = document.getElementById('dd-'+name+'-panel');
+  const btn   = document.getElementById('dd-'+name+'-btn');
+  const isOpen = panel.classList.contains('open');
+  // fecha todos
+  document.querySelectorAll('.fd-panel').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.fd-trigger').forEach(b => b.classList.remove('active'));
+  if(!isOpen) {
+    panel.classList.add('open');
+    btn.classList.add('active');
+  }
+}
+
+function updateSummary(name, selected, total, labelAll) {
+  const el = document.getElementById('dd-'+name+'-summary');
+  if(!el) return;
+  if(selected === total) el.textContent = labelAll;
+  else el.textContent = selected+' de '+total;
+}
+
+function selectAll(name) {
+  if(name==='safra') {
+    MONTHLY.forEach(m => state.safras.add(m.mes));
+    document.querySelectorAll('#fSafra .fp').forEach(p => { p.classList.add('on','y'); });
+    updateSummary('safra', state.safras.size, MONTHLY.length, 'Todas');
+  } else if(name==='prod') {
+    PRODS.forEach(p => state.prods.add(p));
+    document.querySelectorAll('#fProd .fp').forEach(p => {
+      const prod = p.dataset.val;
+      const c = {HIBRIDO:'b','PURO DEBITO':'o'}[prod]||'b';
+      p.className = 'fp on '+c;
+    });
+    updateSummary('prod', state.prods.size, PRODS.length, 'Todos');
+  } else if(name==='ciclo') {
+    CICLOS.forEach(c => state.ciclos.add(c));
+    const cc=['g','g','b','b','o','o'];
+    document.querySelectorAll('#fCiclo .fp').forEach((p,i) => { p.className = 'fp on '+cc[i]; });
+    updateSummary('ciclo', state.ciclos.size, CICLOS.length, 'Todos');
+  }
+  updateCharts();
+}
+
+// Fecha dropdown ao clicar fora
+document.addEventListener('click', e => {
+  if(!e.target.closest('.fg-group')) {
+    document.querySelectorAll('.fd-panel').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.fd-trigger').forEach(b => b.classList.remove('active'));
+  }
+});
+
+function buildFilters() {
+  // Safras
+  const fSafra = document.getElementById('fSafra');
+  MONTHLY.forEach(m => {
+    const p = document.createElement('button');
+    p.className = 'fp on y';
+    p.dataset.val = m.mes;
+    p.innerHTML = m.mes + (m.completo ? '' : ' *') + '<span class="fp-check">&#10003;</span>';
+    p.onclick = () => {
+      const key = m.mes;
+      if(state.safras.has(key)) {
+        if(state.safras.size===1) return;
+        state.safras.delete(key); p.classList.remove('on','y');
+      } else {
+        state.safras.add(key); p.classList.add('on','y');
+      }
+      updateSummary('safra', state.safras.size, MONTHLY.length, 'Todas');
+      updateCharts();
+    };
+    fSafra.appendChild(p);
+  });
+  updateSummary('safra', state.safras.size, MONTHLY.length, 'Todas');
+
+  // Produtos
+  const fProd = document.getElementById('fProd');
+  const prodColors = {HIBRIDO:'b', 'PURO DEBITO':'o'};
+  PRODS.forEach(prod => {
+    const p = document.createElement('button');
+    const c = prodColors[prod]||'b';
+    p.className = 'fp on '+c;
+    p.dataset.val = prod;
+    p.innerHTML = prod + '<span class="fp-check">&#10003;</span>';
+    p.onclick = () => {
+      if(state.prods.has(prod)) {
+        if(state.prods.size===1) return;
+        state.prods.delete(prod); p.classList.remove('on',c);
+      } else {
+        state.prods.add(prod); p.classList.add('on',c);
+      }
+      updateSummary('prod', state.prods.size, PRODS.length, 'Todos');
+      updateCharts();
+    };
+    fProd.appendChild(p);
+  });
+  updateSummary('prod', state.prods.size, PRODS.length, 'Todos');
+
+  // Ciclos
+  const fCiclo = document.getElementById('fCiclo');
+  const cicloColors=['g','g','b','b','o','o'];
+  CICLOS.forEach((ciclo,idx) => {
+    const p = document.createElement('button');
+    p.className = 'fp on '+cicloColors[idx];
+    p.dataset.val = ciclo;
+    p.innerHTML = ciclo + '<span class="fp-check">&#10003;</span>';
+    p.onclick = () => {
+      const c = cicloColors[idx];
+      if(state.ciclos.has(ciclo)) {
+        if(state.ciclos.size===1) return;
+        state.ciclos.delete(ciclo); p.classList.remove('on',c);
+      } else {
+        state.ciclos.add(ciclo); p.classList.add('on',c);
+      }
+      updateSummary('ciclo', state.ciclos.size, CICLOS.length, 'Todos');
+      updateCharts();
+    };
+    fCiclo.appendChild(p);
+  });
+  updateSummary('ciclo', state.ciclos.size, CICLOS.length, 'Todos');
+}
+
+function setGrupo(g) {
+  state.grupo = g;
+  document.getElementById('gt-g1').classList.toggle('active', g === 'GRUPO1');
+  document.getElementById('gt-g2').classList.toggle('active', g === 'GRUPO2');
+  buildCicloSafraTable();
+  updateKPIs();
+}
+
+function resetFilters() {
+  state.safras = new Set(MONTHLY.map(m=>m.mes));
+  state.prods  = new Set(PRODS);
+  state.ciclos = new Set(CICLOS);
+  state.grupo  = 'GRUPO1';
+  document.getElementById('gt-g1').classList.add('active');
+  document.getElementById('gt-g2').classList.remove('active');
+  const cc=['g','g','b','b','o','o'];
+  document.querySelectorAll('#fSafra .fp').forEach(p => { p.classList.add('on','y'); });
+  document.querySelectorAll('#fProd .fp').forEach(p => {
+    const prod = p.dataset.val;
+    const c = {HIBRIDO:'b','PURO DEBITO':'o'}[prod]||'b';
+    p.className = 'fp on '+c;
+    p.querySelector('.fp-check').innerHTML='&#10003;';
+  });
+  document.querySelectorAll('#fCiclo .fp').forEach((p,i) => { p.className = 'fp on '+cc[i]; });
+  updateSummary('safra', state.safras.size, MONTHLY.length, 'Todas');
+  updateSummary('prod', state.prods.size, PRODS.length, 'Todos');
+  updateSummary('ciclo', state.ciclos.size, CICLOS.length, 'Todos');
+  updateCharts();
+}
+
+// ── DATA ──────────────────────────────────────────────────────
+document.getElementById('currentDate').textContent =
+  new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+
+// ── SUMARIO EXECUTIVO ─────────────────────────────────────────
+// ── HELPER: mes label → safra YYYYMM ──────────────────────────
+function mesToSafra(mes) {
+  const mm = {Jan:'01',Fev:'02',Mar:'03',Abr:'04',Mai:'05',Jun:'06',Jul:'07',Ago:'08',Set:'09',Out:'10',Nov:'11',Dez:'12'};
+  const clean = mes.replace('*','').trim();
+  const parts  = clean.split('/');
+  return '20'+parts[1]+(mm[parts[0]]||'00');
+}
+
+// ── FUNIL VISUAL ──────────────────────────────────────────────
+function renderFunil(containerId, stages) {
+  // stages = [{label, value, color, dark}]
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  const max = stages[0].value || 1;
+  const fmtN = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'K' : String(n||0);
+  const pctCls = p => p >= 70 ? 'good' : p >= 40 ? 'mid' : 'low';
+
+  el.innerHTML = stages.map((s, i) => {
+    const w = max ? Math.max(30, Math.round(s.value / max * 100)) : 100;
+    const pct = i > 0 && stages[i-1].value ? (s.value / stages[i-1].value * 100).toFixed(1) : null;
+    const arrow = pct !== null ? `
+      <div class="funil-arrow">
+        <div class="funil-arrow-line"></div>
+        <span class="funil-arrow-pct ${pctCls(parseFloat(pct))}">${pct}%</span>
+        <div class="funil-arrow-line"></div>
+      </div>` : '';
+    return `${arrow}
+      <div class="funil-stage">
+        <div class="funil-bar" style="background:${s.color};width:${w}%">
+          <span class="funil-bar-label${s.dark?' dark':''}">${s.label}</span>
+          <span class="funil-bar-value${s.dark?' dark':''}">${fmtN(s.value)}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function getFunilStages(tel, sol, ent, ativ) {
+  return [
+    {label:'Elegiveis',    value: tel,  color:'#FFE600', dark:true},
+    {label:'Solicitacoes', value: sol,  color:'#009EE3', dark:false},
+    {label:'Entregues',    value: ent,  color:'#00A650', dark:false},
+    {label:'Ativados',     value: ativ, color:'#FF6B00', dark:false},
+  ];
+}
+
+function buildFunilVisual() {
+  const D = getD();
+
+  // Funil total (responsivo aos filtros)
+  const totalTel  = D.elegiveis.reduce((a,b)=>a+b,0);
+  const totalSol  = D.meses.reduce((a,_,i)=>a+D.renovacoes[i]+D.reemissoes[i],0);
+  const totalEnt  = D.entregues.reduce((a,b)=>a+b,0);
+  const safrasMMSet = new Set([...state.safras].map(mes => mesToSafra(mes)));
+  const totalAtiv = FUNIL_DATA.filter(d=>safrasMMSet.has(d.safra)).reduce((a,d)=>a+d.ativados,0);
+  const safrasSel = [...state.safras];
+  const elSub = document.getElementById('fn-total-sub');
+  if(elSub) elSub.textContent = safrasSel.length === MONTHLY.length
+    ? 'Todas as safras'
+    : safrasSel.length === 1
+      ? safrasSel[0]
+      : safrasSel.length+' safras selecionadas';
+  renderFunil('funil-total', getFunilStages(totalTel, totalSol, totalEnt, totalAtiv));
+
+  // Últimas duas safras completas
+  const completasDesc = MONTHLY.filter(m=>m.completo).slice().reverse();
+  const s1 = completasDesc[1]; // penultima
+  const s2 = completasDesc[0]; // ultima
+
+  [['s1',s1],['s2',s2]].forEach(([key, mo]) => {
+    if(!mo) return;
+    const safra = mesToSafra(mo.mes);
+    const fd    = FUNIL_DATA.find(d=>d.safra===safra);
+    const tel   = mo.tel || 0;
+    const sol   = mo.ren + mo.rei;
+    const ent   = mo.ent;
+    const ativ  = fd ? fd.ativados : 0;
+    const titleEl = document.getElementById('fn-'+key+'-title');
+    if(titleEl) titleEl.textContent = mo.mes;
+    renderFunil('funil-'+key, getFunilStages(tel, sol, ent, ativ));
+  });
+}
+
+function buildSumario() {
+  const fmtN = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'K' : String(n);
+  const pct  = (a,b) => b ? (a/b*100).toFixed(1)+'%' : '—';
+
+  // Barra de sumario total
+  const s = SUMARIO_TOTAL;
+  setEl('sm-dt-atualizacao', DT_ATUALIZACAO);
+  setEl('sm-total',          fmtN(s.qtde_total));
+  setEl('sm-renov',          fmtN(s.qtde_renovados));
+  setEl('sm-reemit',         fmtN(s.qtde_reemitidos));
+  setEl('sm-tot-renov',      fmtN(s.qtde_total_renov));
+  setEl('sm-entregue',       fmtN(s.qtde_entregue));
+  setEl('sm-desblq',         fmtN(s.qtde_desbloqueado));
+  setEl('sm-total-pct',      'base elegivel');
+  setEl('sm-renov-pct',      pct(s.qtde_renovados, s.qtde_total)+' do total');
+  setEl('sm-reemit-pct',     pct(s.qtde_reemitidos, s.qtde_total)+' do total');
+  setEl('sm-tot-renov-pct',  pct(s.qtde_total_renov, s.qtde_total)+' do total');
+  setEl('sm-entregue-pct',   pct(s.qtde_entregue, s.qtde_total_renov)+' do total renovado');
+  setEl('sm-desblq-pct',     pct(s.qtde_desbloqueado, s.qtde_entregue)+' dos entregues');
+
+  // Tabela por ciclo de uso
+  const tbody = document.getElementById('ciclo-tbody');
+  if(!tbody) return;
+  if(!SUMARIO_CICLO.length) return;
+
+  const pctPill = (a, b) => {
+    const v = b ? (a/b*100) : 0;
+    const cls = v >= 70 ? 'high' : v >= 40 ? 'mid' : 'low';
+    return `<span class="pct-pill ${cls}">${b ? v.toFixed(1)+'%' : '—'}</span>`;
+  };
+
+  tbody.innerHTML = '';
+  // Linha de totais (soma de todos os ciclos)
+  const tot = SUMARIO_CICLO.reduce((acc,c) => {
+    acc.qtde_total       += c.qtde_total;
+    acc.qtde_renovados   += c.qtde_renovados;
+    acc.qtde_reemitidos  += c.qtde_reemitidos;
+    acc.qtde_total_renov += c.qtde_total_renov;
+    acc.qtde_entregue    += c.qtde_entregue;
+    acc.qtde_desbloqueado+= c.qtde_desbloqueado;
+    return acc;
+  }, {qtde_total:0,qtde_renovados:0,qtde_reemitidos:0,qtde_total_renov:0,qtde_entregue:0,qtde_desbloqueado:0});
+
+  SUMARIO_CICLO.forEach(c => {
+    tbody.innerHTML += `<tr>
+      <td><strong>${c.ciclo}</strong></td>
+      <td>${fmtN(c.qtde_total)}</td>
+      <td>${fmtN(c.qtde_renovados)}</td>
+      <td>${pctPill(c.qtde_renovados, c.qtde_total)}</td>
+      <td>${fmtN(c.qtde_reemitidos)}</td>
+      <td>${pctPill(c.qtde_reemitidos, c.qtde_total)}</td>
+      <td>${fmtN(c.qtde_total_renov)}</td>
+      <td>${pctPill(c.qtde_total_renov, c.qtde_total)}</td>
+      <td>${fmtN(c.qtde_entregue)}</td>
+      <td>${pctPill(c.qtde_entregue, c.qtde_total_renov)}</td>
+      <td>${fmtN(c.qtde_desbloqueado)}</td>
+      <td>${pctPill(c.qtde_desbloqueado, c.qtde_entregue)}</td>
+    </tr>`;
+  });
+
+  // Linha de total geral
+  tbody.innerHTML += `<tr style="font-weight:800;background:#f5f5f5;border-top:2px solid #ddd">
+    <td>TOTAL 90d</td>
+    <td>${fmtN(tot.qtde_total)}</td>
+    <td>${fmtN(tot.qtde_renovados)}</td>
+    <td>${pctPill(tot.qtde_renovados, tot.qtde_total)}</td>
+    <td>${fmtN(tot.qtde_reemitidos)}</td>
+    <td>${pctPill(tot.qtde_reemitidos, tot.qtde_total)}</td>
+    <td>${fmtN(tot.qtde_total_renov)}</td>
+    <td>${pctPill(tot.qtde_total_renov, tot.qtde_total)}</td>
+    <td>${fmtN(tot.qtde_entregue)}</td>
+    <td>${pctPill(tot.qtde_entregue, tot.qtde_total_renov)}</td>
+    <td>${fmtN(tot.qtde_desbloqueado)}</td>
+    <td>${pctPill(tot.qtde_desbloqueado, tot.qtde_entregue)}</td>
+  </tr>`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+buildFilters();
+buildSumario();
+buildFunilVisual();
+initCharts();
+updateKPIs();
+buildTable();
+buildSlide();
+
+// ── TAB SWITCHING ─────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

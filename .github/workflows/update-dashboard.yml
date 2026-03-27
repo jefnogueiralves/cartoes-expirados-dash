@@ -1,0 +1,49 @@
+name: Atualizar Dashboard
+
+on:
+  schedule:
+    # Todo dia às 10:00 UTC = 07:00 Brasília
+    - cron: '0 10 * * *'
+  workflow_dispatch:   # permite rodar manualmente pelo GitHub
+
+permissions:
+  contents: write   # para fazer commit do dashboard_data.js gerado
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Autenticar no Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Instalar dependências
+        run: pip install google-cloud-bigquery
+
+      - name: Extrair dados do BigQuery
+        run: python scripts/update_data.py
+
+      - name: Verificar se houve mudança
+        id: diff
+        run: |
+          git diff --quiet dashboard_data.js || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit e push do dashboard_data.js
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard_data.js
+          git commit -m "data: atualização automática $(date +'%d/%m/%Y')"
+          git push
