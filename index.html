@@ -765,7 +765,6 @@
 
 <nav class="tabs">
   <button class="tab-btn active" onclick="switchTab('visao-geral')">Visão Geral</button>
-  <button class="tab-btn" onclick="switchTab('renovacoes')">Renovações + Reemissões</button>
   <button class="tab-btn" onclick="switchTab('entrega')">Prazo de Entrega</button>
   <button class="tab-btn" onclick="switchTab('funil')">Funil de Conversão</button>
   <button class="tab-btn" onclick="switchTab('ativacao')">Ativacao Pos-Renovacao</button>
@@ -920,17 +919,9 @@
       </div>
     </div>
 
-    <div class="footer-note">
-      ✅ <span><strong>Dados reais do BigQuery</strong> · <code>meli-bi-data.SBOX_CREDITSTC.CARTAO_EXPIRADO_ANL</code> · Atualizado em 27/03/2026 · Safras Mai/25 → Mar/26* (*parcial, vence 31/03). Dias médios calculados por média ponderada das faixas DIAS_ENTREGA.</span>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       TAB: RENOVAÇÕES
-  ═══════════════════════════════════════════════════════════ -->
-  <div id="tab-renovacoes" class="tab-panel">
-    <div class="section-title">
-      Renovações + Reemissões — # Total
+    <!-- ── REEMISSÕES (unificado) ── -->
+    <div class="section-title" style="margin-top:32px">
+      Reemissões
       <span class="badge">Mai/25 → Mar/26*</span>
     </div>
 
@@ -1041,7 +1032,13 @@
         </table>
       </div>
     </div>
+
+    <div class="footer-note">
+      ✅ <span><strong>Dados reais do BigQuery</strong> · <code>meli-bi-data.SBOX_CREDITSTC.CARTAO_EXPIRADO_ANL</code> · Atualizado em 27/03/2026 · Safras Mai/25 → Mar/26* (*parcial, vence 31/03). Dias médios calculados por média ponderada das faixas DIAS_ENTREGA.</span>
+    </div>
   </div>
+
+  <!-- tab-renovacoes removido — conteúdo unificado em tab-visao-geral -->
 
   <!-- ════════════════════════════════���══════════════════════════
        TAB: PRAZO DE ENTREGA
