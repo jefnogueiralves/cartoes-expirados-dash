@@ -142,6 +142,13 @@ const C_REI = {
   '91-120d':0.24, '121-180d':0.24, '+181d':0.14,
 };
 
+// ── TOTAL GRUPO 2 (derivado) ──────────────────────────────────
+// GRUPO2 = expirados NÃO em GRUPO1 (todos INATIVO — sem renovações)
+const TOTAL_GRUPO2 = {};
+Object.keys(TOTAL_EXPIRADO).forEach(s => {
+  TOTAL_GRUPO2[s] = Math.max(0, (TOTAL_EXPIRADO[s] || 0) - (TOTAL_GRUPO1[s] || 0));
+});
+
 // ── HELPER ────────────────────────────────────────────────────
 // safra YYYYMM → label Mês/AA
 function safraLabel(s) {
@@ -149,23 +156,37 @@ function safraLabel(s) {
   return mm[parseInt(s.slice(4,6))-1] + '/' + s.slice(2,4);
 }
 
-// ── RAW_DATA — todas as combinações (mes × produto × ciclo) ──
+// Retorna array MONTHLY filtrado por grupo
+function getMonthlyByGrupo(grupo) {
+  if (grupo === 'GRUPO1') return MONTHLY;
+  // GRUPO2: sem renovações/reemissões, tel = TOTAL_GRUPO2 por safra
+  return MONTHLY.map(m => {
+    const s = m.mes.replace('*','');
+    const yy = s.slice(-2), mo = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].indexOf(s.slice(0,3)) + 1;
+    const safra = '20' + yy + String(mo).padStart(2,'0');
+    const tel = TOTAL_GRUPO2[safra] || 0;
+    return { mes: m.mes, completo: m.completo, ren: 0, rei: 0, ent: 0, dm: 0, tel };
+  });
+}
+
+// ── RAW_DATA — reconstruído por grupo; inicializado com GRUPO1 ──
 const RAW_DATA = [];
-MONTHLY.forEach(m => {
-  PRODS.forEach(prod => {
-    const pW = P_W[prod];
-    CICLOS.forEach(ciclo => {
-      RAW_DATA.push({
-        mes: m.mes,
-        prod,
-        ciclo,
-        ren: Math.round(m.ren * pW * C_REN[ciclo]),
-        rei: Math.round(m.rei * pW * C_REI[ciclo]),
-        tel: Math.round(m.tel * pW / CICLOS.length),
-        ent: Math.round(m.ent * pW / CICLOS.length),
-        dm:  m.dm,
-        completo: m.completo,
+function rebuildRawData(monthly) {
+  RAW_DATA.length = 0;
+  monthly.forEach(m => {
+    PRODS.forEach(prod => {
+      const pW = P_W[prod];
+      CICLOS.forEach(ciclo => {
+        RAW_DATA.push({
+          mes: m.mes, prod, ciclo,
+          ren: Math.round(m.ren * pW * C_REN[ciclo]),
+          rei: Math.round(m.rei * pW * C_REI[ciclo]),
+          tel: Math.round(m.tel * pW / CICLOS.length),
+          ent: Math.round(m.ent * pW / CICLOS.length),
+          dm: m.dm, completo: m.completo,
+        });
       });
     });
   });
-});
+}
+rebuildRawData(MONTHLY);

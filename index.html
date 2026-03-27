@@ -1615,7 +1615,8 @@ function getD() {
     state.prods.has(r.prod) &&
     state.ciclos.has(r.ciclo)
   );
-  const months = MONTHLY.filter(m => state.safras.has(m.mes)).map(m => m.mes);
+  const monthly = getMonthlyByGrupo(state.grupo);
+  const months = monthly.filter(m => state.safras.has(m.mes)).map(m => m.mes);
   const byM = {};
   months.forEach(m => byM[m] = {ren:0, rei:0, tel:0, ent:0});
   filtered.forEach(r => {
@@ -1641,17 +1642,18 @@ function getKpiD() {
     state.safras.has(r.mes) && r.completo &&
     state.prods.has(r.prod) && state.ciclos.has(r.ciclo)
   );
-  const months = MONTHLY.filter(m => state.safras.has(m.mes) && m.completo).map(m => m.mes);
+  const monthly = getMonthlyByGrupo(state.grupo);
+  const months = monthly.filter(m => state.safras.has(m.mes) && m.completo).map(m => m.mes);
   const byM = {};
   months.forEach(m => byM[m] = {ren:0, rei:0, tel:0, ent:0, dm:0});
   filtered.forEach(r => {
     if(byM[r.mes]){ byM[r.mes].ren+=r.ren; byM[r.mes].rei+=r.rei;
                     byM[r.mes].tel+=r.tel; byM[r.mes].ent+=r.ent; }
   });
-  MONTHLY.filter(m=>state.safras.has(m.mes)&&m.completo).forEach(m=>{
+  monthly.filter(m=>state.safras.has(m.mes)&&m.completo).forEach(m=>{
     if(byM[m.mes]) byM[m.mes].dm = m.dm;
   });
-  // totalTelFull e totalTelG1: usa dados reais BQ escalados pelos filtros de produto e ciclo
+  // totalTelFull e totalTelGrupo: usa dados reais BQ escalados pelos filtros
   const selectedSafras = [...state.safras];
   const pw = getProdWeight();
   const G1_CICLOS_LIST = ['0-30d','31-60d','61-90d','91-120d','121-180d'];
@@ -1660,7 +1662,11 @@ function getKpiD() {
     return a + (TOTAL_EXPIRADO[mesToSafra(mes)] || 0);
   }, 0) * pw);
   const totalTelG1 = Math.round(selectedSafras.reduce((a, mes) => {
-    return a + (TOTAL_GRUPO1[mesToSafra(mes)] || 0);
+    const s = mesToSafra(mes);
+    const val = state.grupo === 'GRUPO1'
+      ? (TOTAL_GRUPO1[s] || 0)
+      : (TOTAL_GRUPO2[s] || 0);
+    return a + val;
   }, 0) * pw * g1CicloW);
 
   const entVec = months.map(m=>byM[m].ent);
@@ -2136,25 +2142,34 @@ function buildCicloSafraTable() {
     ['#94a3b8','148,163,184'],  // c7 cinza
   ];
 
-  // Helpers: retorna telG1 por safra
-  // Prioridade: 1) TOTAL_GRUPO1 real BQ, 2) CICLO_SAFRA c1-c5, 3) estimativa sintética
-  const telG1 = mo => {
+  const monthly = getMonthlyByGrupo(state.grupo);
+
+  // Retorna total elegível do grupo selecionado por safra
+  const telGrupo = mo => {
     const safra = mesToSafra(mo.mes);
+    if (state.grupo === 'GRUPO2') return TOTAL_GRUPO2[safra] || 0;
     if (TOTAL_GRUPO1[safra]) return TOTAL_GRUPO1[safra];
-    const ciclo = CICLO_SAFRA.find(c => c.safra === safra && (c.grupo === state.grupo || !c.grupo));
+    const ciclo = CICLO_SAFRA.find(c => c.safra === safra);
     if (ciclo) return g1Keys.reduce((a,k) => a+(ciclo[k]||0), 0);
     return Math.round(mo.tel * 5 / 6);
   };
 
-  const totRen  = MONTHLY.reduce((a,m)=>a+m.ren,0);
-  const totRei  = MONTHLY.reduce((a,m)=>a+m.rei,0);
-  const totTelG1 = MONTHLY.reduce((a,m)=>a+telG1(m),0);
-  const totAll  = totRen+totRei;
+  // Para GRUPO2: ciclo sintético (todos INATIVO = c7)
+  const getCicloForGrupo = safra => {
+    if (state.grupo === 'GRUPO1') return CICLO_SAFRA.find(c => c.safra === safra);
+    const telG2 = TOTAL_GRUPO2[safra] || 0;
+    return telG2 > 0 ? { safra, c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:telG2 } : null;
+  };
 
-  [...MONTHLY].reverse().forEach(mo => {
+  const totRen   = monthly.reduce((a,m)=>a+m.ren,0);
+  const totRei   = monthly.reduce((a,m)=>a+m.rei,0);
+  const totTelG1 = monthly.reduce((a,m)=>a+telGrupo(m),0);
+  const totAll   = totRen+totRei;
+
+  [...monthly].reverse().forEach(mo => {
     const safra    = mesToSafra(mo.mes);
-    const ciclo    = CICLO_SAFRA.find(c => c.safra === safra && (c.grupo === state.grupo || !c.grupo));
-    const g1       = telG1(mo);
+    const ciclo    = getCicloForGrupo(safra);
+    const g1       = telGrupo(mo);
     const totalRnv = mo.ren + mo.rei;
     const pctAll   = g1 ? (totalRnv / g1 * 100).toFixed(1) : '—';
     const pctRen   = g1 ? (mo.ren   / g1 * 100).toFixed(1) : '—';
@@ -2922,8 +2937,8 @@ function setGrupo(g) {
   state.grupo = g;
   document.getElementById('gt-g1').classList.toggle('active', g === 'GRUPO1');
   document.getElementById('gt-g2').classList.toggle('active', g === 'GRUPO2');
-  buildCicloSafraTable();
-  updateKPIs();
+  rebuildRawData(getMonthlyByGrupo(g));
+  updateCharts();
 }
 
 function resetFilters() {
