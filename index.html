@@ -2776,26 +2776,35 @@ function setDelta(id, txt, good) {
 // ── TABELA RENOVAÇÕES ──────────────────────────────────────────
 function buildTable() {
   const D = getD();
+  const monthly = getMonthlyByGrupo(state.grupo);
   const tbl = document.getElementById('tableRenov');
   if(!tbl) return;
   tbl.innerHTML = `<thead><tr>
-    <th>Mês</th><th>Renovações</th><th>Var. M/M</th><th>% do Mix</th><th>Status</th>
+    <th>Mês (Exp.)</th><th>Vol. G1</th><th>Renovados</th><th>Var. M/M</th><th>% Conv.</th><th>Status</th>
   </tr></thead>`;
   const tbody = document.createElement('tbody');
   D.meses.forEach((m,i) => {
-    const r=D.renovacoes[i], re=D.reemissoes[i];
-    const prev=i>0?D.renovacoes[i-1]:null;
-    const varMM=prev?((r-prev)/prev*100).toFixed(1):null;
-    const p=(r+re)?+(r/(r+re)*100).toFixed(1):0;
-    const varTxt=varMM!==null?(r>=prev?'▲ ':'▼ ')+Math.abs(varMM)+'%':'—';
-    const varCl=varMM===null?'blue':(r>=prev?'green':'red');
-    const st=p>=80?'Ótimo':p>=65?'Bom':'Atenção';
-    const stCl=p>=80?'green':p>=65?'orange':'red';
-    tbody.innerHTML+=`<tr>
+    const r   = D.renovacoes[i];
+    const re  = D.reemissoes[i];
+    const tot = r + re;                                    // Renovados = ren + rei
+    const mo  = monthly.find(x => x.mes === m);
+    const safra = mo ? mesToSafra(mo.mes) : null;
+    const volG1 = safra
+      ? (state.grupo === 'GRUPO2' ? (TOTAL_GRUPO2[safra]||0) : (TOTAL_GRUPO1[safra]||0))
+      : D.elegiveis[i];
+    const prevTot = i > 0 ? D.renovacoes[i-1] + D.reemissoes[i-1] : null;
+    const varMM   = prevTot ? ((tot - prevTot) / prevTot * 100).toFixed(1) : null;
+    const pctConv = volG1 ? (tot / volG1 * 100).toFixed(1) : 0;
+    const varTxt  = varMM !== null ? (tot >= prevTot ? '▲ ' : '▼ ') + Math.abs(varMM) + '%' : '—';
+    const varCl   = varMM === null ? 'blue' : (tot >= prevTot ? 'green' : 'red');
+    const st      = pctConv >= 80 ? 'Ótimo' : pctConv >= 65 ? 'Bom' : 'Atenção';
+    const stCl    = pctConv >= 80 ? 'green' : pctConv >= 65 ? 'orange' : 'red';
+    tbody.innerHTML += `<tr>
       <td><strong>${m}</strong></td>
-      <td>${fmtFull(r)}</td>
+      <td>${fmtFull(volG1)}</td>
+      <td>${fmtFull(tot)}</td>
       <td><span class="pill ${varCl}">${varTxt}</span></td>
-      <td>${p}%</td>
+      <td>${pctConv}%</td>
       <td><span class="pill ${stCl}">${st}</span></td>
     </tr>`;
   });
