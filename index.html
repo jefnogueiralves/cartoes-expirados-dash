@@ -1013,20 +1013,8 @@
       <div class="chart-sub" style="margin-bottom:14px">Cada linha = safra de expiração · Share ciclo = distribuição dos elegíveis por frequência de uso antes da expiração · Preencha <code>CICLO_SAFRA</code> para exibir os shares</div>
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <thead>
-            <tr style="background:#0d1628;color:#8899b4;text-align:center;font-size:11px;letter-spacing:.4px;text-transform:uppercase">
-              <th style="padding:9px 12px;text-align:left;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#94a3b8">Safra Exp.</th>
-              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#818cf8">Vol. Elegível G1</th>
-              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#fff;font-weight:700">Renovados</th>
-              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#4ade80;font-weight:700">% Eleg.</th>
-              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;border-left:2px solid #1e3a2f;white-space:nowrap;color:#4ade80;background:rgba(74,222,128,.05)">0–30d</th>
-              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#34d399;background:rgba(52,211,153,.05)">31–60d</th>
-              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#22d3ee;background:rgba(34,211,238,.05)">61–90d</th>
-              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#fbbf24;background:rgba(251,191,36,.05)">91–120d</th>
-              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#fb923c;background:rgba(251,146,60,.05)">121–180d</th>
-              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;border-left:2px solid #3a1e1e;white-space:nowrap;color:#f87171;background:rgba(248,113,113,.05)">&gt;180d</th>
-              <th style="padding:9px 8px;border-bottom:2px solid #1e2d45;white-space:nowrap;color:#94a3b8;background:rgba(148,163,184,.05)">Inativo</th>
-            </tr>
+          <thead id="ciclo-safra-thead">
+            <!-- construído por buildCicloSafraTable() -->
           </thead>
           <tbody id="ciclo-safra-tbody"></tbody>
         </table>
@@ -2122,75 +2110,103 @@ function initCharts() {
 
 // ── TABELA CICLO DE USO POR SAFRA ─────────────────────────────
 function buildCicloSafraTable() {
-  const tbody = document.getElementById('ciclo-safra-tbody');
-  if (!tbody) return;
+  const tbody  = document.getElementById('ciclo-safra-tbody');
+  const thead  = document.getElementById('ciclo-safra-thead');
+  if (!tbody || !thead) return;
   tbody.innerHTML = '';
 
-  const cicloKeys = ['c1','c2','c3','c4','c5','c6','c7'];
-  const g1Keys    = ['c1','c2','c3','c4','c5'];
-  // [text color, bg RGB] por ciclo — heatmap: intensidade = % do total
-  const cicloStyle = [
-    ['#4ade80','74,222,128'],   // c1 verde
-    ['#34d399','52,211,153'],   // c2 teal
-    ['#22d3ee','34,211,238'],   // c3 cyan
-    ['#fbbf24','251,191,36'],   // c4 amarelo
-    ['#fb923c','251,146,60'],   // c5 laranja
-    ['#f87171','248,113,113'],  // c6 vermelho
-    ['#94a3b8','148,163,184'],  // c7 cinza
+  // Ciclos: label, chave, cor texto, rgb fundo, peso renovação (C_REN proxy)
+  const CICLOS_DEF = [
+    { label:'0–30d',     k:'c1', col:'#4ade80', rgb:'74,222,128',   wRen:0.25 },
+    { label:'31–60d',    k:'c2', col:'#34d399', rgb:'52,211,153',   wRen:0.30 },
+    { label:'61–90d',    k:'c3', col:'#22d3ee', rgb:'34,211,238',   wRen:0.20 },
+    { label:'91–120d',   k:'c4', col:'#fbbf24', rgb:'251,191,36',   wRen:0.12 },
+    { label:'121–180d',  k:'c5', col:'#fb923c', rgb:'251,146,60',   wRen:0.08 },
+    { label:'>180d',     k:'c6', col:'#f87171', rgb:'248,113,113',  wRen:0.05 },
+    { label:'Inativo',   k:'c7', col:'#94a3b8', rgb:'148,163,184',  wRen:0.00 },
   ];
 
   const monthly = getMonthlyByGrupo(state.grupo);
 
-  // Retorna total elegível do grupo selecionado por safra
   const telGrupo = mo => {
     const safra = mesToSafra(mo.mes);
     if (state.grupo === 'GRUPO2') return TOTAL_GRUPO2[safra] || 0;
     if (TOTAL_GRUPO1[safra]) return TOTAL_GRUPO1[safra];
     const ciclo = CICLO_SAFRA.find(c => c.safra === safra);
-    if (ciclo) return g1Keys.reduce((a,k) => a+(ciclo[k]||0), 0);
-    return Math.round(mo.tel * 5 / 6);
+    return ciclo ? ['c1','c2','c3','c4','c5'].reduce((a,k) => a+(ciclo[k]||0), 0) : Math.round(mo.tel * 5/6);
   };
 
-  // Para GRUPO2: ciclo sintético (todos INATIVO = c7)
   const getCicloForGrupo = safra => {
     if (state.grupo === 'GRUPO1') return CICLO_SAFRA.find(c => c.safra === safra);
-    const telG2 = TOTAL_GRUPO2[safra] || 0;
-    return telG2 > 0 ? { safra, c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:telG2 } : null;
+    const t = TOTAL_GRUPO2[safra] || 0;
+    return t > 0 ? { safra, c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:t } : null;
   };
 
-  const totRen   = monthly.reduce((a,m)=>a+m.ren,0);
-  const totRei   = monthly.reduce((a,m)=>a+m.rei,0);
-  const totTelG1 = monthly.reduce((a,m)=>a+telGrupo(m),0);
-  const totAll   = totRen+totRei;
+  // ── Constrói thead dinâmico ─────────────────────────────────
+  const thBase = 'padding:6px 4px;white-space:nowrap;text-align:center;font-size:10px;letter-spacing:.3px;text-transform:uppercase;';
+  const thLeft = 'padding:8px 12px;text-align:left;white-space:nowrap;font-size:10px;text-transform:uppercase;letter-spacing:.3px;';
 
-  [...monthly].reverse().forEach(mo => {
+  // Linha 1: cabeçalhos dos ciclos (colspan=2 cada)
+  let h1 = `<tr style="background:#0a1422;">
+    <th rowspan="2" style="${thLeft}border-bottom:2px solid #1e2d45;color:#94a3b8">Safra Exp.</th>
+    <th rowspan="2" style="${thBase}border-bottom:2px solid #1e2d45;color:#818cf8">Vol. G1</th>
+    <th rowspan="2" style="${thBase}border-bottom:2px solid #1e2d45;color:#f1f5f9;font-weight:800">Renovados</th>`;
+  CICLOS_DEF.forEach((c, i) => {
+    const bl = (i === 5) ? 'border-left:2px solid #3a1e1e;' : (i === 0 ? 'border-left:2px solid #1e3a2f;' : '');
+    h1 += `<th colspan="2" style="${thBase}${bl}color:${c.col};background:rgba(${c.rgb},.06);border-bottom:1px solid #1e2d45;border-right:1px dashed #1e2d45">${c.label}</th>`;
+  });
+  h1 += `</tr>`;
+
+  // Linha 2: % Conv e Share por ciclo
+  let h2 = `<tr style="background:#080f1c;">`;
+  CICLOS_DEF.forEach((c, i) => {
+    const bl = (i === 5) ? 'border-left:2px solid #3a1e1e;' : (i === 0 ? 'border-left:2px solid #1e3a2f;' : '');
+    h2 += `<th style="${thBase}${bl}color:${c.col};border-bottom:2px solid #1e2d45;font-size:9px;padding:4px 6px">% Conv</th>`;
+    h2 += `<th style="${thBase}color:#64748b;border-bottom:2px solid #1e2d45;font-size:9px;padding:4px 6px;border-right:1px dashed #1e2d45">Share</th>`;
+  });
+  h2 += `</tr>`;
+  thead.innerHTML = h1 + h2;
+
+  // ── Totais para linha TOTAL ─────────────────────────────────
+  const totRen   = monthly.reduce((a,m) => a+m.ren, 0);
+  const totRei   = monthly.reduce((a,m) => a+m.rei, 0);
+  const totAll   = totRen + totRei;
+  const totTelG1 = monthly.reduce((a,m) => a+telGrupo(m), 0);
+
+  // ── Linhas de dados ─────────────────────────────────────────
+  const tdBase = 'padding:5px 6px;text-align:center;font-size:11px;font-variant-numeric:tabular-nums;';
+
+  ;[...monthly].reverse().forEach(mo => {
     const safra    = mesToSafra(mo.mes);
     const ciclo    = getCicloForGrupo(safra);
     const g1       = telGrupo(mo);
     const totalRnv = mo.ren + mo.rei;
-    const pctAll   = g1 ? (totalRnv / g1 * 100).toFixed(1) : '—';
-    const pctRen   = g1 ? (mo.ren   / g1 * 100).toFixed(1) : '—';
-    const pctRei   = g1 ? (mo.rei   / g1 * 100).toFixed(1) : '—';
     const isInc    = !mo.completo;
 
     let cicloHtml = '';
     if (ciclo) {
-      const tot = cicloKeys.reduce((a,k) => a+(ciclo[k]||0), 0);
-      cicloHtml = cicloKeys.map((k,i) => {
-        const val = ciclo[k] || 0;
-        const pctNum = tot ? (val / tot * 100) : 0;
-        const pctStr = pctNum.toFixed(1);
-        const [txtColor, bgRgb] = cicloStyle[i];
-        const alpha = Math.min(0.55, Math.max(0.07, pctNum / 55));
-        const leftBorder = i === 5 ? 'border-left:1px solid #2a1e1e;' : (i === 0 ? 'border-left:1px solid #1e3a2f;' : '');
-        const bg = `rgba(${bgRgb},${alpha.toFixed(2)})`;
-        return `<td style="padding:5px 9px;text-align:center;background:${bg};color:${txtColor};font-size:11.5px;font-weight:600;${leftBorder}">${pctStr}%</td>`;
-      }).join('');
+      const totCiclo = CICLOS_DEF.reduce((a,c) => a+(ciclo[c.k]||0), 0);
+      CICLOS_DEF.forEach((cd, i) => {
+        const val      = ciclo[cd.k] || 0;
+        // % Conversão = renovados estimados nesse ciclo / elegíveis nesse ciclo
+        const renovCiclo = totalRnv * cd.wRen;
+        const pctConv  = val > 0 ? Math.min(999, renovCiclo / val * 100) : 0;
+        // Share = % do total G1 nesse ciclo
+        const share    = g1 > 0 ? (val / g1 * 100) : 0;
+        const alpha    = Math.min(0.5, Math.max(0.05, share / 40));
+        const bg       = `rgba(${cd.rgb},${alpha.toFixed(2)})`;
+        const bl       = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
+        const convTxt  = pctConv > 0 ? pctConv.toFixed(1)+'%' : '—';
+        const shareTxt = share > 0.05 ? share.toFixed(1)+'%' : '—';
+        cicloHtml += `<td style="${tdBase}${bl}background:${bg};color:${cd.col};font-weight:700">${convTxt}</td>`;
+        cicloHtml += `<td style="${tdBase}background:${bg};color:#94a3b8;border-right:1px dashed #1e2d45">${shareTxt}</td>`;
+      });
     } else {
-      cicloHtml = cicloKeys.map((_, i) => {
-        const leftBorder = i === 5 ? 'border-left:1px solid #2a1e1e;' : (i === 0 ? 'border-left:1px solid #1e3a2f;' : '');
-        return `<td style="padding:5px 9px;text-align:center;color:#334155;background:#0a1628;${leftBorder}">—</td>`;
-      }).join('');
+      CICLOS_DEF.forEach((cd, i) => {
+        const bl = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
+        cicloHtml += `<td style="${tdBase}${bl}color:#334155;background:#0a1628">—</td>`;
+        cicloHtml += `<td style="${tdBase}color:#334155;background:#0a1628;border-right:1px dashed #1e2d45">—</td>`;
+      });
     }
 
     const tr = document.createElement('tr');
@@ -2199,26 +2215,27 @@ function buildCicloSafraTable() {
     tr.onmouseleave = function() { this.style.background = '#0a1628'; };
     tr.innerHTML = `
       <td style="padding:7px 12px;font-weight:700;color:${isInc?'#fbbf24':'#93c5fd'};white-space:nowrap;border-right:1px solid #1e2d45">${mo.mes}</td>
-      <td style="padding:5px 9px;text-align:center;color:#a5b4fc;font-variant-numeric:tabular-nums">${fmt(g1)}</td>
-      <td style="padding:5px 9px;text-align:center;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums">${fmt(totalRnv)}</td>
-      <td style="padding:5px 9px;text-align:center;font-weight:700;color:#4ade80;border-right:1px solid #1e2d45">${pctAll}%</td>
+      <td style="${tdBase}color:#a5b4fc">${fmt(g1)}</td>
+      <td style="${tdBase}font-weight:700;color:#f1f5f9">${fmt(totalRnv)}</td>
       ${cicloHtml}
     `;
     tbody.appendChild(tr);
   });
 
-  // Linha de totais
-  const pctAllTot = totTelG1 ? (totAll/totTelG1*100).toFixed(1) : '—';
-  const pctRenTot = totTelG1 ? (totRen/totTelG1*100).toFixed(1) : '—';
-  const pctReiTot = totTelG1 ? (totRei/totTelG1*100).toFixed(1) : '—';
+  // ── Linha TOTAL ─────────────────────────────────────────────
+  const pctAllTot = totTelG1 ? (totAll/totTelG1*100).toFixed(1)+'%' : '—';
   const trTot = document.createElement('tr');
   trTot.style.cssText = 'background:#060e1c;font-weight:700;border-top:2px solid #1e2d45;';
+  let totCicloHtml = '';
+  CICLOS_DEF.forEach((cd, i) => {
+    const bl = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
+    totCicloHtml += `<td style="${tdBase}${bl}color:#475569">—</td><td style="${tdBase}color:#475569;border-right:1px dashed #1e2d45">—</td>`;
+  });
   trTot.innerHTML = `
     <td style="padding:7px 10px;color:#f1f5f9;font-weight:800">TOTAL</td>
-    <td style="padding:5px 8px;text-align:center;color:#a5b4fc">${fmt(totTelG1)}</td>
-    <td style="padding:5px 8px;text-align:center;color:#f1f5f9">${fmt(totAll)}</td>
-    <td style="padding:5px 8px;text-align:center;color:#4ade80">${pctAllTot}%</td>
-    ${cicloKeys.map((_,i) => { const lb = i===5?'border-left:1px solid #2a1e1e;':(i===0?'border-left:1px solid #1e3a2f;':''); return `<td style="padding:5px 9px;text-align:center;color:#475569;${lb}">—</td>`; }).join('')}
+    <td style="${tdBase}color:#a5b4fc">${fmt(totTelG1)}</td>
+    <td style="${tdBase}color:#f1f5f9">${fmt(totAll)}</td>
+    ${totCicloHtml}
   `;
   tbody.appendChild(trTot);
 }
