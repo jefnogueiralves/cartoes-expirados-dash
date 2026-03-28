@@ -2167,39 +2167,70 @@ function buildCicloSafraTable() {
   h2 += `</tr>`;
   thead.innerHTML = h1 + h2;
 
-  // ── Totais para linha TOTAL ─────────────────────────────────
-  const totRen   = monthly.reduce((a,m) => a+m.ren, 0);
-  const totRei   = monthly.reduce((a,m) => a+m.rei, 0);
-  const totAll   = totRen + totRei;
-  const totTelG1 = monthly.reduce((a,m) => a+telGrupo(m), 0);
-
-  // ── Linhas de dados ─────────────────────────────────────────
+  // ── Pré-computa dados por safra (ordem cronológica) ─────────
   const tdBase = 'padding:5px 6px;text-align:center;font-size:11px;font-variant-numeric:tabular-nums;';
 
-  ;[...monthly].reverse().forEach(mo => {
+  // totais para a linha TOTAL
+  let totAll   = 0;
+  let totTelG1 = 0;
+  const totValByCiclo = {};   // soma de elegíveis por ciclo
+  const totRenByCiclo = {};   // soma de renovados estimados por ciclo
+  CICLOS_DEF.forEach(cd => { totValByCiclo[cd.k] = 0; totRenByCiclo[cd.k] = 0; });
+
+  // rows[i] corresponde a monthly[i], armazena share por ciclo para cálculo de tendência
+  const rows = monthly.map(mo => {
     const safra    = mesToSafra(mo.mes);
     const ciclo    = getCicloForGrupo(safra);
     const g1       = telGrupo(mo);
     const totalRnv = mo.ren + mo.rei;
-    const isInc    = !mo.completo;
+    totAll   += totalRnv;
+    totTelG1 += g1;
+    const cicloData = {};
+    if (ciclo) {
+      CICLOS_DEF.forEach(cd => {
+        const val        = ciclo[cd.k] || 0;
+        const renovCiclo = totalRnv * cd.wRen;
+        const pctConv    = val > 0 ? Math.min(999, renovCiclo / val * 100) : 0;
+        const share      = g1 > 0 ? (val / g1 * 100) : 0;
+        cicloData[cd.k]  = { val, renovCiclo, pctConv, share };
+        totValByCiclo[cd.k] += val;
+        totRenByCiclo[cd.k] += renovCiclo;
+      });
+    }
+    return { mo, g1, totalRnv, ciclo, cicloData };
+  });
+
+  // ── Linhas de dados (ordem reversa = mais recente primeiro) ─
+  ;[...rows].reverse().forEach((row, revIdx) => {
+    const { mo, g1, totalRnv, ciclo, cicloData } = row;
+    const isInc = !mo.completo;
+    // índice cronológico desta linha = rows.length - 1 - revIdx
+    const chronIdx = rows.length - 1 - revIdx;
+    // linha anterior cronologicamente (para seta de tendência)
+    const prevCicloData = chronIdx > 0 ? rows[chronIdx - 1].cicloData : null;
 
     let cicloHtml = '';
     if (ciclo) {
-      const totCiclo = CICLOS_DEF.reduce((a,c) => a+(ciclo[c.k]||0), 0);
       CICLOS_DEF.forEach((cd, i) => {
-        const val      = ciclo[cd.k] || 0;
-        // % Conversão = renovados estimados nesse ciclo / elegíveis nesse ciclo
-        const renovCiclo = totalRnv * cd.wRen;
-        const pctConv  = val > 0 ? Math.min(999, renovCiclo / val * 100) : 0;
-        // Share = % do total G1 nesse ciclo
-        const share    = g1 > 0 ? (val / g1 * 100) : 0;
-        const alpha    = Math.min(0.5, Math.max(0.05, share / 40));
-        const bg       = `rgba(${cd.rgb},${alpha.toFixed(2)})`;
-        const bl       = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
-        const convTxt  = pctConv > 0 ? pctConv.toFixed(1)+'%' : '—';
+        const { val, pctConv, share } = cicloData[cd.k] || { val:0, pctConv:0, share:0 };
+        const alpha   = Math.min(0.5, Math.max(0.05, share / 40));
+        const bg      = `rgba(${cd.rgb},${alpha.toFixed(2)})`;
+        const bl      = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
+        const convTxt = pctConv > 0 ? pctConv.toFixed(1)+'%' : '—';
+
+        // seta de tendência do share vs safra anterior
+        let arrow = '';
+        if (prevCicloData && prevCicloData[cd.k] !== undefined) {
+          const prevShare = prevCicloData[cd.k].share;
+          const diff = share - prevShare;
+          if (diff > 0.5)       arrow = '<span style="color:#4ade80;font-size:9px;margin-left:2px">↑</span>';
+          else if (diff < -0.5) arrow = '<span style="color:#f87171;font-size:9px;margin-left:2px">↓</span>';
+          else                  arrow = '<span style="color:#64748b;font-size:9px;margin-left:2px">→</span>';
+        }
+
         const shareTxt = share > 0.05 ? share.toFixed(1)+'%' : '—';
         cicloHtml += `<td style="${tdBase}${bl}background:${bg};color:${cd.col};font-weight:700">${convTxt}</td>`;
-        cicloHtml += `<td style="${tdBase}background:${bg};color:#94a3b8;border-right:1px dashed #1e2d45">${shareTxt}</td>`;
+        cicloHtml += `<td style="${tdBase}background:${bg};color:#94a3b8;border-right:1px dashed #1e2d45">${shareTxt}${arrow}</td>`;
       });
     } else {
       CICLOS_DEF.forEach((cd, i) => {
@@ -2223,13 +2254,17 @@ function buildCicloSafraTable() {
   });
 
   // ── Linha TOTAL ─────────────────────────────────────────────
-  const pctAllTot = totTelG1 ? (totAll/totTelG1*100).toFixed(1)+'%' : '—';
   const trTot = document.createElement('tr');
   trTot.style.cssText = 'background:#060e1c;font-weight:700;border-top:2px solid #1e2d45;';
   let totCicloHtml = '';
   CICLOS_DEF.forEach((cd, i) => {
-    const bl = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
-    totCicloHtml += `<td style="${tdBase}${bl}color:#475569">—</td><td style="${tdBase}color:#475569;border-right:1px dashed #1e2d45">—</td>`;
+    const bl          = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
+    const sumVal      = totValByCiclo[cd.k];
+    const sumRen      = totRenByCiclo[cd.k];
+    const totPctConv  = sumVal > 0 ? Math.min(999, sumRen / sumVal * 100).toFixed(1)+'%' : '—';
+    const totShare    = totTelG1 > 0 ? (sumVal / totTelG1 * 100).toFixed(1)+'%' : '—';
+    totCicloHtml += `<td style="${tdBase}${bl}color:${cd.col};font-weight:700">${totPctConv}</td>`;
+    totCicloHtml += `<td style="${tdBase}color:#94a3b8;border-right:1px dashed #1e2d45">${totShare}</td>`;
   });
   trTot.innerHTML = `
     <td style="padding:7px 10px;color:#f1f5f9;font-weight:800">TOTAL</td>
