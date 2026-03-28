@@ -2273,7 +2273,7 @@ function buildFaixaDiasChart() {
   const faixasSet = new Set();
   safras.forEach(s => Object.keys(DIAS_ENTREGA_DIST[s]).forEach(f => faixasSet.add(f)));
   // Ordena faixas por ponto médio (menor prazo primeiro)
-  const ORDEM_FAIXA = ['Até 5 dias','Ate 5 dias','1-5','6-10 dias','6-10','11-15 dias','11-15','16-20 dias','16-20','Mais de 20 dias','Acima de 20','+20','21+'];
+  const ORDEM_FAIXA = ['00. CARTAO NAO ENTREGUE','01. ATE 2 DIAS','02. ATE 5 DIAS','03. ATE 7 DIAS','04. ATE 10 DIAS','05. ACIMA DE 10 DIAS','06. NAO RENOVADO'];
   const faixas = [...faixasSet].sort((a,b) => {
     const ia = ORDEM_FAIXA.findIndex(x=>x===a), ib = ORDEM_FAIXA.findIndex(x=>x===b);
     if (ia>=0 && ib>=0) return ia-ib;

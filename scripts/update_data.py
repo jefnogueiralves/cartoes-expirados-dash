@@ -119,10 +119,10 @@ Q_DIAS_ENTREGA = f"""
 SELECT
   REPLACE(EXPIRATION_DATE, '-', '') AS safra,
   DIAS_ENTREGA,
-  COUNT(*)                          AS qtde
-FROM `{ANL_TABLE}`
-WHERE DIAS_ENTREGA IS NOT NULL
-  AND FLAG_GRUPO = 'GRUPO1'
+  SUM(QTDE_TOTAL)                   AS qtde
+FROM `{CUBO_TABLE}`
+WHERE FLAG_GRUPO = 'GRUPO1'
+  AND DIAS_ENTREGA IS NOT NULL
 GROUP BY 1, 2
 ORDER BY 1, 2
 """
@@ -139,26 +139,15 @@ ORDER BY 1
 """
 
 # ── DIAS_ENTREGA faixa → ponto médio (dias) ──────────────────
-# Ajuste os midpoints se as faixas do BQ tiverem nomes diferentes.
-# A key deve ser o valor exato de DIAS_ENTREGA na tabela.
+# Valores exatos do campo DIAS_ENTREGA conforme a query da base.
 DIAS_MIDPOINT = {
-    'Até 5 dias':     3,
-    'Ate 5 dias':     3,
-    '1-5':            3,
-    '1 a 5':          3,
-    '6-10 dias':      8,
-    '6 a 10':         8,
-    '6-10':           8,
-    '11-15 dias':    13,
-    '11 a 15':       13,
-    '11-15':         13,
-    '16-20 dias':    18,
-    '16 a 20':       18,
-    '16-20':         18,
-    'Mais de 20 dias': 25,
-    'Acima de 20':   25,
-    '+20':           25,
-    '21+':           25,
+    '00. CARTAO NAO ENTREGUE': 0,   # excluído da média (não entregue)
+    '01. ATE 2 DIAS':          1.5,
+    '02. ATE 5 DIAS':          3.5,
+    '03. ATE 7 DIAS':          6.0,
+    '04. ATE 10 DIAS':         8.5,
+    '05. ACIMA DE 10 DIAS':   13.0,
+    '06. NAO RENOVADO':        0,   # excluído da média (não renovado)
 }
 
 def calc_dm(rows_faixas: list, safra: str) -> float:
@@ -173,12 +162,10 @@ def calc_dm(rows_faixas: list, safra: str) -> float:
         qtde  = int(r['qtde'] or 0)
         mp    = DIAS_MIDPOINT.get(faixa)
         if mp is None:
-            # tenta extrair número do início da string (ex: "3" ou "3.5")
-            try:
-                mp = float(faixa.split()[0].replace(',', '.'))
-            except Exception:
-                unknown.add(faixa)
-                continue
+            unknown.add(faixa)
+            continue
+        if mp == 0:          # faixas excluídas da média (não entregue / não renovado)
+            continue
         total_qtde += qtde
         total_dias += mp * qtde
     if unknown:
@@ -186,7 +173,16 @@ def calc_dm(rows_faixas: list, safra: str) -> float:
     return round(total_dias / total_qtde, 1) if total_qtde > 0 else 5.0
 
 # ── Ciclo label → coluna cN ───────────────────────────────────
+# Valores exatos de FLAG_CICLO_USO_TD conforme a query da base.
 CICLO_MAP = {
+    '01. 1 A 30 D':       'c1',
+    '02. 31 A 60 D':      'c2',
+    '03. 61 A 90 D':      'c3',
+    '04. 91 A 120 D':     'c4',
+    '05. 121 A 180 D':    'c5',
+    '06. ACIMA DE 180 D': 'c6',
+    '07. NAO ATIVO':      'c7',
+    # fallbacks para tabelas antigas sem prefixo numérico
     '0-30d':     'c1',
     '31-60d':    'c2',
     '61-90d':    'c3',
