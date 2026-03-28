@@ -142,6 +142,15 @@ const C_REI = {
   '91-120d':0.24, '121-180d':0.24, '+181d':0.14,
 };
 
+// ── DISTRIBUIÇÃO DIAS_ENTREGA POR FAIXA/MÊS ──────────────────
+// Gerado por update_data.py · faixas: chaves do objeto interno
+// Estrutura: { 'YYYYMM': { 'Faixa X': qtde, ... }, ... }
+// Enquanto não houver dado real do BQ, deixar vazio.
+const DIAS_ENTREGA_DIST = {
+  // Exemplo de como ficará após o BQ:
+  // '202505': { 'Até 5 dias': 800, '6-10 dias': 400, '11-15 dias': 120, '16-20 dias': 30, 'Mais de 20 dias': 4 },
+};
+
 // ── TOTAL GRUPO 2 (derivado) ──────────────────────────────────
 // GRUPO2 = expirados NÃO em GRUPO1 (todos INATIVO — sem renovações)
 const TOTAL_GRUPO2 = {};

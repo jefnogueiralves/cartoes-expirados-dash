@@ -115,6 +115,18 @@ GROUP BY 1
 ORDER BY 1
 """
 
+Q_DIAS_ENTREGA = f"""
+SELECT
+  REPLACE(EXPIRATION_DATE, '-', '') AS safra,
+  DIAS_ENTREGA,
+  COUNT(*)                          AS qtde
+FROM `{ANL_TABLE}`
+WHERE DIAS_ENTREGA IS NOT NULL
+  AND FLAG_GRUPO = 'GRUPO1'
+GROUP BY 1, 2
+ORDER BY 1, 2
+"""
+
 Q_SPENDING = f"""
 SELECT
   REPLACE(EXPIRATION_DATE, '-', '') AS safra,
@@ -125,6 +137,53 @@ WHERE FLAG_GRUPO = 'GRUPO1'
 GROUP BY 1
 ORDER BY 1
 """
+
+# ── DIAS_ENTREGA faixa → ponto médio (dias) ──────────────────
+# Ajuste os midpoints se as faixas do BQ tiverem nomes diferentes.
+# A key deve ser o valor exato de DIAS_ENTREGA na tabela.
+DIAS_MIDPOINT = {
+    'Até 5 dias':     3,
+    'Ate 5 dias':     3,
+    '1-5':            3,
+    '1 a 5':          3,
+    '6-10 dias':      8,
+    '6 a 10':         8,
+    '6-10':           8,
+    '11-15 dias':    13,
+    '11 a 15':       13,
+    '11-15':         13,
+    '16-20 dias':    18,
+    '16 a 20':       18,
+    '16-20':         18,
+    'Mais de 20 dias': 25,
+    'Acima de 20':   25,
+    '+20':           25,
+    '21+':           25,
+}
+
+def calc_dm(rows_faixas: list, safra: str) -> float:
+    """Média ponderada das faixas DIAS_ENTREGA para uma safra."""
+    total_qtde = 0
+    total_dias = 0.0
+    unknown = set()
+    for r in rows_faixas:
+        if r['safra'] != safra:
+            continue
+        faixa = str(r['DIAS_ENTREGA'] or '').strip()
+        qtde  = int(r['qtde'] or 0)
+        mp    = DIAS_MIDPOINT.get(faixa)
+        if mp is None:
+            # tenta extrair número do início da string (ex: "3" ou "3.5")
+            try:
+                mp = float(faixa.split()[0].replace(',', '.'))
+            except Exception:
+                unknown.add(faixa)
+                continue
+        total_qtde += qtde
+        total_dias += mp * qtde
+    if unknown:
+        print(f'  [AVISO] DIAS_ENTREGA faixas não mapeadas: {unknown}')
+    return round(total_dias / total_qtde, 1) if total_qtde > 0 else 5.0
 
 # ── Ciclo label → coluna cN ───────────────────────────────────
 CICLO_MAP = {
@@ -151,12 +210,14 @@ def main():
     rows_ciclo      = run(Q_CICLO_SAFRA)
     rows_funil      = run(Q_FUNIL)
     rows_spending   = run(Q_SPENDING)
+    rows_dias       = run(Q_DIAS_ENTREGA)
 
     print(f'  MONTHLY: {len(rows_monthly)} safras')
     print(f'  TOTAL_GRUPO1: {len(rows_tg1)} safras')
     print(f'  CICLO_SAFRA: {len(rows_ciclo)} linhas')
     print(f'  FUNIL: {len(rows_funil)} safras')
     print(f'  SPENDING: {len(rows_spending)} safras')
+    print(f'  DIAS_ENTREGA: {len(rows_dias)} linhas')
 
     # ── TOTAL_GRUPO1 dict ──────────────────────────────────────
     total_g1 = {r['safra']: int(r['qtde']) for r in rows_tg1}
@@ -177,7 +238,7 @@ def main():
             'ren':      int(r['ren'] or 0),
             'rei':      int(r['rei'] or 0),
             'ent':      int(r['ent'] or 0),
-            'dm':       5,
+            'dm':       calc_dm(rows_dias, safra),
             'tel':      tel,
         })
 
@@ -230,6 +291,30 @@ def main():
             'tpn_td_antes': 0,
         })
 
+    # ── DIAS_ENTREGA_DIST dict of dicts ───────────────────────
+    dias_dist_by_safra = {}
+    for r in rows_dias:
+        safra = r['safra']
+        faixa = str(r['DIAS_ENTREGA'] or '').strip()
+        qtde  = int(r['qtde'] or 0)
+        if faixa and qtde > 0:
+            if safra not in dias_dist_by_safra:
+                dias_dist_by_safra[safra] = {}
+            dias_dist_by_safra[safra][faixa] = dias_dist_by_safra[safra].get(faixa, 0) + qtde
+
+    def js_dist(dist_by_safra):
+        """Serializa { 'YYYYMM': { 'Faixa': N, ... }, ... } como objeto JS."""
+        lines = []
+        for safra in sorted(dist_by_safra.keys()):
+            inner = ', '.join(
+                f"'{f}': {v}"
+                for f, v in sorted(dist_by_safra[safra].items())
+            )
+            lines.append(f"  '{safra}': {{{inner}}}")
+        return '{\n' + ',\n'.join(lines) + '\n}'
+
+    dias_dist_js = js_dist(dias_dist_by_safra) if dias_dist_by_safra else '{}'
+
     # ── Renderiza JS ──────────────────────────────────────────
     def js_arr(items, indent='  '):
         lines = []
@@ -280,6 +365,9 @@ const SPENDING_ANTES = {spending_js};
 
 // ── CICLO DE USO POR SAFRA ─────────────────────────────────────
 const CICLO_SAFRA = {ciclo_safra_js};
+
+// ── DISTRIBUIÇÃO DIAS_ENTREGA POR FAIXA/MÊS ──────────────────
+const DIAS_ENTREGA_DIST = {dias_dist_js};
 
 // ── TOTAIS BQ — UNIVERSO COMPLETO ─────────────────────────────
 const TOTAL_EXPIRADO = {total_exp_js};
