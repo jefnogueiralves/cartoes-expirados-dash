@@ -1679,17 +1679,14 @@ function initCharts() {
     data:{
       labels: D.meses,
       datasets:[
-        {label:'Renovações', data:D.renovacoes, backgroundColor:C.yellow, borderRadius:4, order:2},
-        {label:'Reemissões', data:D.reemissoes, backgroundColor:C.blue, borderRadius:4, order:2},
-        {label:'Total', type:'line', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]),
-          borderColor:C.orange, borderWidth:1.5, pointRadius:2, fill:false, tension:.4, order:1},
+        {label:'Renovados', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:C.yellow, borderRadius:4},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
       scales:{
-        x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
-        y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{color:'#eee'}},
+        x:{grid:{display:false}, ticks:{font:{size:10}}},
+        y:{beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}},
       }
     }
   });
@@ -1716,8 +1713,7 @@ function initCharts() {
     data:{
       labels:D.meses,
       datasets:[
-        {label:'Renovações', data:D.renovacoes, backgroundColor:C.yellowA, borderColor:C.yellow, borderWidth:1.5, borderRadius:3, yAxisID:'y'},
-        {label:'Reemissões', data:D.reemissoes, backgroundColor:C.blueA,   borderColor:C.blue,   borderWidth:1.5, borderRadius:3, yAxisID:'y'},
+        {label:'Renovados', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:C.yellowA, borderColor:C.yellow, borderWidth:1.5, borderRadius:3, yAxisID:'y'},
         {label:'Dias Médios', type:'line', data:D.diasMedios, borderColor:C.orange, borderWidth:1.5,
           pointRadius:2, pointBackgroundColor:'#fff', pointBorderColor:C.orange, fill:false, tension:.4, yAxisID:'y2'},
       ]
@@ -1726,7 +1722,7 @@ function initCharts() {
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{color:'#eee'}, position:'left'},
+        y:{beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}, position:'left'},
         y2:{beginAtZero:false, ticks:{callback:v=>v+'d',font:{size:10}}, position:'right', grid:{display:false}},
       }
     }
@@ -1738,17 +1734,14 @@ function initCharts() {
     data:{
       labels: D.meses,
       datasets:[
-        {label:'Renovações', data:D.renovacoes, backgroundColor:C.yellow, borderRadius:4, order:2},
-        {label:'Reemissões', data:D.reemissoes, backgroundColor:C.blue, borderRadius:4, order:2},
-        {label:'Total', type:'line', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]),
-          borderColor:C.orange, borderWidth:1.5, pointRadius:2, fill:false, tension:.4, order:1},
+        {label:'Renovados', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:C.yellow, borderRadius:4},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
       scales:{
-        x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
-        y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{color:'#eee'}},
+        x:{grid:{display:false}, ticks:{font:{size:10}}},
+        y:{beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}},
       }
     }
   });
@@ -1771,7 +1764,7 @@ function initCharts() {
           color:'#333',font:{size:9,weight:'bold'},formatter:v=>v+'%'}},
       scales:{
         x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
-        y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#eee'}},
+        y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -1793,7 +1786,7 @@ function initCharts() {
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
         datalabels:{anchor:'end',align:'top',color:'#555',font:{size:9,weight:'bold'},formatter:v=>v+'d'}},
       scales:{x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{min:3,max:9,ticks:{callback:v=>v+'d',font:{size:10}},grid:{color:'#eee'}}}
+        y:{min:3,max:9,ticks:{callback:v=>v+'d',font:{size:10}},grid:{display:false}}}
     }
   });
 
@@ -1803,13 +1796,12 @@ function initCharts() {
     data:{
       labels:D.meses,
       datasets:[
-        {label:'Renovações', data:D.renovacoes, borderColor:C.yellow, borderWidth:1.5, backgroundColor:C.yellowA, fill:true, tension:.4, pointRadius:2},
-        {label:'Reemissões', data:D.reemissoes, borderColor:C.blue,   borderWidth:1.5, backgroundColor:C.blueA,   fill:true, tension:.4, pointRadius:2},
+        {label:'Renovados', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), borderColor:C.yellow, borderWidth:1.5, backgroundColor:C.yellowA, fill:true, tension:.4, pointRadius:2},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}}}
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{display:false}}}
     }
   });
 
@@ -1831,7 +1823,7 @@ function initCharts() {
           color:'#333',font:{size:9,weight:'bold'},formatter:v=>v+'%'}},
       scales:{
         x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
-        y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#eee'}},
+        y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -1852,7 +1844,7 @@ function initCharts() {
         datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8},formatter:v=>v>=1000?(v/1000).toFixed(0)+'K':v}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,ticks:{callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v,font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,ticks:{callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v,font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -1880,7 +1872,7 @@ function initCharts() {
         datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8,weight:'bold'},formatter:v=>v+'%'}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,max:110,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,max:110,ticks:{callback:v=>v+'%',font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -1900,7 +1892,7 @@ function initCharts() {
         datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8},formatter:v=>v?fmt(v):''}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -1919,7 +1911,7 @@ function initCharts() {
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -1941,7 +1933,7 @@ function initCharts() {
         datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8},formatter:v=>v?fmt(v):''}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -1962,7 +1954,7 @@ function initCharts() {
         datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8,weight:'bold'},formatter:v=>v?v+'%':''}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,max:110,ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,max:110,ticks:{callback:v=>v+'%',font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -1983,7 +1975,7 @@ function initCharts() {
         datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8},formatter:v=>v?fmt(v):''}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -2002,7 +1994,7 @@ function initCharts() {
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -2022,7 +2014,7 @@ function initCharts() {
         datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8},formatter:v=>v?fmt(v):''}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -2041,7 +2033,7 @@ function initCharts() {
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -2060,7 +2052,7 @@ function initCharts() {
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}},
+        y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -2292,10 +2284,10 @@ function buildSpendingTimeline() {
     },
     scales:{
       x:{ title:{display:true,text:'Meses relativos à expiração',color:'#aaa',font:{size:11}},
-          grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#aaa',font:{size:11}} },
+          grid:{display:false}, ticks:{color:'#aaa',font:{size:11}} },
       y:{ title:{display:true,text:`${title} (R$)`,color:'#aaa',font:{size:11}},
           ticks:{color:'#aaa', callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v},
-          grid:{color:'rgba(255,255,255,0.05)'} }
+          grid:{display:false} }
     }
   });
 
@@ -2417,9 +2409,7 @@ function updateCharts() {
   // chartMain
   if(charts.main) {
     charts.main.data.labels = D.meses;
-    upDs(charts.main, 'Renovações', D.renovacoes);
-    upDs(charts.main, 'Reemissões', D.reemissoes);
-    upDs(charts.main, 'Total', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
+    upDs(charts.main, 'Renovados', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
     charts.main.update();
   }
 
@@ -2432,8 +2422,7 @@ function updateCharts() {
   // chartCombo
   if(charts.combo) {
     charts.combo.data.labels = D.meses;
-    upDs(charts.combo, 'Renovações', D.renovacoes);
-    upDs(charts.combo, 'Reemissões', D.reemissoes);
+    upDs(charts.combo, 'Renovados', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
     upDs(charts.combo, 'Dias Médios', D.diasMedios);
     charts.combo.update();
   }
@@ -2441,9 +2430,7 @@ function updateCharts() {
   // chartMainTab
   if(charts.mainTab) {
     charts.mainTab.data.labels = D.meses;
-    upDs(charts.mainTab, 'Renovações', D.renovacoes);
-    upDs(charts.mainTab, 'Reemissões', D.reemissoes);
-    upDs(charts.mainTab, 'Total', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
+    upDs(charts.mainTab, 'Renovados', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
     charts.mainTab.update();
   }
 
@@ -2466,8 +2453,7 @@ function updateCharts() {
   // chartTrend
   if(charts.trend) {
     charts.trend.data.labels = D.meses;
-    upDs(charts.trend, 'Renovações', D.renovacoes);
-    upDs(charts.trend, 'Reemissões', D.reemissoes);
+    upDs(charts.trend, 'Renovados', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
     charts.trend.update();
   }
 
