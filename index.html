@@ -1061,7 +1061,7 @@
           <canvas id="chartFaixaDias"></canvas>
         </div>
         <div id="chartFaixaEmpty" style="display:none;text-align:center;padding:40px;color:#64748b;font-size:13px">
-          Sem dados de DIAS_ENTREGA_DIST ainda.<br>
+          Sem dados de DIAS_ENTREGA_V2 / DIAS_ENTREGA_DIST ainda.<br>
           Execute <code>atualizar.bat</code> para preencher com dados reais do BQ.
         </div>
       </div>
@@ -1078,6 +1078,23 @@
           </table>
           <div id="faixaTableEmpty" style="text-align:center;padding:32px;color:#64748b;font-size:13px">
             Execute <code>atualizar.bat</code> para carregar dados de DIAS_ENTREGA.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <div class="chart-row full">
+      <div class="chart-card">
+        <h3>Entrega por Ciclo de Uso — Taxa e Prazo Médio</h3>
+        <div class="chart-sub">Quem é mais ativo está recebendo o cartão? · % entregues e prazo médio por ciclo de uso · acumulado safras selecionadas</div>
+        <div id="entregaCicloWrap" style="overflow-x:auto">
+          <table id="entregaCicloTable" style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead id="entregaCicloThead"></thead>
+            <tbody id="entregaCicloTbody"></tbody>
+          </table>
+          <div id="entregaCicloEmpty" style="text-align:center;padding:32px;color:#64748b;font-size:13px">
+            Execute <code>atualizar.bat</code> para carregar dados de ENTREGA_CICLO.
           </div>
         </div>
       </div>
@@ -1617,15 +1634,44 @@ const FAIXA_MIDPOINT = {
 };
 // faixas excluídas da média: '00. CARTAO NAO ENTREGUE', '06. NAO RENOVADO'
 
+// Usa V2 se disponível, senão V1
+function getDistData() {
+  return Object.keys(DIAS_ENTREGA_V2).length > 0 ? DIAS_ENTREGA_V2 : DIAS_ENTREGA_DIST;
+}
+
+const IS_V2 = () => Object.keys(DIAS_ENTREGA_V2).length > 0;
+
+// V2: chave = dias inteiros (ex: '3', '7'); V1: chave = faixa textual
 function calcDmFromDist(safra) {
-  const dist = DIAS_ENTREGA_DIST[safra];
+  const dist = getDistData()[safra];
   if (!dist) return null;
   let totalQtde = 0, totalDias = 0;
-  Object.entries(dist).forEach(([faixa, qtde]) => {
-    const mp = FAIXA_MIDPOINT[faixa];
-    if (mp && qtde > 0) { totalQtde += qtde; totalDias += mp * qtde; }
+  Object.entries(dist).forEach(([key, qtde]) => {
+    if (!qtde || qtde <= 0) return;
+    if (IS_V2()) {
+      const d = parseInt(key);
+      if (!isNaN(d) && d > 0) { totalQtde += qtde; totalDias += d * qtde; }
+    } else {
+      const mp = FAIXA_MIDPOINT[key];
+      if (mp) { totalQtde += qtde; totalDias += mp * qtde; }
+    }
   });
   return totalQtde > 0 ? +(totalDias / totalQtde).toFixed(1) : null;
+}
+
+// Para V2 (inteiros): agrupa em faixas compat. com V1 para exibição
+function bucketV2Dist(dist) {
+  const b = {'01. ATE 2 DIAS':0,'02. ATE 5 DIAS':0,'03. ATE 7 DIAS':0,'04. ATE 10 DIAS':0,'05. ACIMA DE 10 DIAS':0,'00. CARTAO NAO ENTREGUE':0};
+  Object.entries(dist).forEach(([key, qtde]) => {
+    const d = parseInt(key);
+    if (isNaN(d) || d <= 0) { b['00. CARTAO NAO ENTREGUE'] += qtde; return; }
+    if      (d <= 2)  b['01. ATE 2 DIAS']          += qtde;
+    else if (d <= 5)  b['02. ATE 5 DIAS']           += qtde;
+    else if (d <= 7)  b['03. ATE 7 DIAS']           += qtde;
+    else if (d <= 10) b['04. ATE 10 DIAS']          += qtde;
+    else              b['05. ACIMA DE 10 DIAS']      += qtde;
+  });
+  return b;
 }
 
 function mesToSafraYYYYMM(mes) {
@@ -2125,6 +2171,7 @@ function initCharts() {
   buildCicloSafraTable();
   buildFaixaDiasChart();
   buildFaixaTable();
+  buildEntregaCicloTable();
 }
 
 // ── TABELA CICLO DE USO POR SAFRA ─────────────────────────────
@@ -2300,7 +2347,12 @@ function buildFaixaTable() {
   const table = document.getElementById('faixaTable');
   if (!thead || !tbody) return;
 
-  const safras = Object.keys(DIAS_ENTREGA_DIST).sort();
+  const RAW    = getDistData();
+  const safras = Object.keys(RAW).sort();
+  // Se V2 (inteiros), agrupa em faixas para exibição
+  const DATA   = IS_V2()
+    ? Object.fromEntries(safras.map(s => [s, bucketV2Dist(RAW[s])]))
+    : RAW;
   if (safras.length === 0) {
     table.style.display = 'none'; empty.style.display = 'block'; return;
   }
@@ -2396,6 +2448,110 @@ function buildFaixaTable() {
   </tr>`;
 }
 
+// ── ENTREGA POR CICLO DE USO ───────────────────────────────────
+function buildEntregaCicloTable() {
+  const thead = document.getElementById('entregaCicloThead');
+  const tbody = document.getElementById('entregaCicloTbody');
+  const empty = document.getElementById('entregaCicloEmpty');
+  const table = document.getElementById('entregaCicloTable');
+  if (!thead || !tbody) return;
+
+  const safraKeys = Object.keys(ENTREGA_CICLO).sort();
+  if (safraKeys.length === 0) {
+    table.style.display = 'none'; empty.style.display = 'block'; return;
+  }
+  table.style.display = ''; empty.style.display = 'none';
+
+  const CICLOS_LABEL = {
+    '01. 1 A 30 D':       {label:'0–30d',     col:'#4ade80'},
+    '02. 31 A 60 D':      {label:'31–60d',    col:'#34d399'},
+    '03. 61 A 90 D':      {label:'61–90d',    col:'#22d3ee'},
+    '04. 91 A 120 D':     {label:'91–120d',   col:'#fbbf24'},
+    '05. 121 A 180 D':    {label:'121–180d',  col:'#fb923c'},
+    '06. ACIMA DE 180 D': {label:'>180d',     col:'#f87171'},
+    '07. NAO ATIVO':      {label:'Inativo',   col:'#94a3b8'},
+  };
+  const ORDEM_CICLO = Object.keys(CICLOS_LABEL);
+
+  // Agrega todas as safras em totais por ciclo
+  const agg = {};
+  ORDEM_CICLO.forEach(k => agg[k] = {total:0, entregue:0, faixas:{}});
+  safraKeys.forEach(s => {
+    const sd = ENTREGA_CICLO[s] || {};
+    ORDEM_CICLO.forEach(k => {
+      if (!sd[k]) return;
+      agg[k].total    += sd[k].total    || 0;
+      agg[k].entregue += sd[k].entregue || 0;
+      Object.entries(sd[k].faixas || {}).forEach(([f, n]) => {
+        agg[k].faixas[f] = (agg[k].faixas[f] || 0) + n;
+      });
+    });
+  });
+
+  // Faixas distintas (ordenadas)
+  const ORDEM_FAIXA = ['01. ATE 2 DIAS','02. ATE 5 DIAS','03. ATE 7 DIAS','04. ATE 10 DIAS','05. ACIMA DE 10 DIAS','00. CARTAO NAO ENTREGUE','06. NAO RENOVADO'];
+  const faixasSet = new Set();
+  ORDEM_CICLO.forEach(k => Object.keys(agg[k].faixas).forEach(f => faixasSet.add(f)));
+  const faixas = [...faixasSet].sort((a,b) => {
+    const ia = ORDEM_FAIXA.indexOf(a), ib = ORDEM_FAIXA.indexOf(b);
+    return (ia<0?99:ia)-(ib<0?99:ib);
+  });
+
+  const thS = 'padding:6px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.3px;text-align:center;white-space:nowrap;';
+  const tdS = 'padding:5px 10px;text-align:center;font-size:11px;font-variant-numeric:tabular-nums;';
+  const fmt = v => v>=1000?(v/1000).toFixed(1)+'K':String(v);
+
+  // Cabeçalho
+  thead.innerHTML = `<tr style="background:#0a1422;border-bottom:2px solid #1e2d45;">
+    <th style="${thS}text-align:left;color:#64748b">Ciclo de Uso</th>
+    <th style="${thS}color:#818cf8"># Total</th>
+    <th style="${thS}color:#4ade80">Entregues</th>
+    <th style="${thS}color:#fb923c">% Entrega</th>
+    <th style="${thS}color:#fb923c;border-left:1px solid #1e2d45">Prazo Médio</th>
+    ${faixas.map(f=>`<th style="${thS}color:#64748b">${f.replace(/^\d+\.\s*/,'')}</th>`).join('')}
+  </tr>`;
+
+  const totais = {total:0,entregue:0};
+
+  const rows = ORDEM_CICLO.map(k => {
+    const {label, col} = CICLOS_LABEL[k];
+    const d = agg[k];
+    totais.total    += d.total;
+    totais.entregue += d.entregue;
+    const pctEnt = d.total > 0 ? (d.entregue/d.total*100).toFixed(1)+'%' : '—';
+    // média ponderada pelas faixas
+    let pmTotal=0, pmDias=0;
+    Object.entries(d.faixas).forEach(([f,n])=>{
+      const mp = FAIXA_MIDPOINT[f];
+      if(mp && n>0){ pmTotal+=n; pmDias+=mp*n; }
+    });
+    const pm = pmTotal > 0 ? (pmDias/pmTotal).toFixed(1)+'d' : '—';
+    const faixaCells = faixas.map(f => {
+      const v = d.faixas[f]||0;
+      const pct = d.total>0?(v/d.total*100).toFixed(1):'0.0';
+      return `<td style="${tdS}"><span style="color:#f1f5f9">${fmt(v)}</span><span style="color:#475569;font-size:10px;margin-left:3px">${pct}%</span></td>`;
+    }).join('');
+    return `<tr style="border-bottom:1px solid #1e2d45;background:#0a1628;" onmouseenter="this.style.background='#0f1e38'" onmouseleave="this.style.background='#0a1628'">
+      <td style="padding:5px 10px;font-size:11px;font-weight:700;color:${col};white-space:nowrap">${label}</td>
+      <td style="${tdS}color:#a5b4fc">${fmt(d.total)}</td>
+      <td style="${tdS}color:#4ade80">${fmt(d.entregue)}</td>
+      <td style="${tdS}color:#fb923c;font-weight:700">${pctEnt}</td>
+      <td style="${tdS}color:#fb923c;border-left:1px solid #1e2d45;font-weight:700">${pm}</td>
+      ${faixaCells}
+    </tr>`;
+  }).join('');
+
+  const pctTot = totais.total>0?(totais.entregue/totais.total*100).toFixed(1)+'%':'—';
+  tbody.innerHTML = rows + `<tr style="background:#060e1c;font-weight:700;border-top:2px solid #1e2d45;">
+    <td style="padding:6px 10px;font-size:11px;color:#f1f5f9">TOTAL</td>
+    <td style="${tdS}color:#a5b4fc">${fmt(totais.total)}</td>
+    <td style="${tdS}color:#4ade80">${fmt(totais.entregue)}</td>
+    <td style="${tdS}color:#fb923c;font-weight:800">${pctTot}</td>
+    <td style="${tdS}color:#475569;border-left:1px solid #1e2d45">—</td>
+    ${faixas.map(()=>`<td style="${tdS}color:#475569">—</td>`).join('')}
+  </tr>`;
+}
+
 // ── DISTRIBUIÇÃO FAIXAS DIAS_ENTREGA ──────────────────────────
 function buildFaixaDiasChart() {
   const canvas = document.getElementById('chartFaixaDias');
@@ -2403,8 +2559,9 @@ function buildFaixaDiasChart() {
   const empty  = document.getElementById('chartFaixaEmpty');
   if (!canvas) return;
 
-  // Ordena safras cronologicamente e filtra as que têm dados
-  const safras = Object.keys(DIAS_ENTREGA_DIST).sort();
+  // Usa V2 se disponível (bucket inteiros → faixas), senão V1
+  const RAW_C  = getDistData();
+  const safras = Object.keys(RAW_C).sort();
   if (safras.length === 0) {
     wrap.style.display  = 'none';
     empty.style.display = 'block';
@@ -2412,6 +2569,9 @@ function buildFaixaDiasChart() {
   }
   wrap.style.display  = 'block';
   empty.style.display = 'none';
+  const CHART_DATA = IS_V2()
+    ? Object.fromEntries(safras.map(s => [s, bucketV2Dist(RAW_C[s])]))
+    : RAW_C;
 
   // Labels no eixo X = label do mês (ex: Jun/25)
   const MES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -2426,7 +2586,7 @@ function buildFaixaDiasChart() {
 
   // Coleta todas as faixas distintas presentes nos dados
   const faixasSet = new Set();
-  safras.forEach(s => Object.keys(DIAS_ENTREGA_DIST[s]).forEach(f => faixasSet.add(f)));
+  safras.forEach(s => Object.keys(CHART_DATA[s]).forEach(f => faixasSet.add(f)));
   // Ordena faixas por ponto médio (menor prazo primeiro)
   const ORDEM_FAIXA = ['00. CARTAO NAO ENTREGUE','01. ATE 2 DIAS','02. ATE 5 DIAS','03. ATE 7 DIAS','04. ATE 10 DIAS','05. ACIMA DE 10 DIAS','06. NAO RENOVADO'];
   const faixas = [...faixasSet].sort((a,b) => {
@@ -2443,7 +2603,7 @@ function buildFaixaDiasChart() {
   // Datasets: % por faixa por safra
   const datasets = faixas.map((faixa, fi) => {
     const data = safras.map(s => {
-      const dist  = DIAS_ENTREGA_DIST[s] || {};
+      const dist  = CHART_DATA[s] || {};
       const total = Object.values(dist).reduce((a,v)=>a+v, 0);
       return total > 0 ? +((dist[faixa]||0) / total * 100).toFixed(1) : 0;
     });
@@ -2825,6 +2985,7 @@ function updateCharts() {
   buildCicloSafraTable();
   buildFaixaDiasChart();
   buildFaixaTable();
+  buildEntregaCicloTable();
   updateKPIs();
   buildTable();
   buildSlide();

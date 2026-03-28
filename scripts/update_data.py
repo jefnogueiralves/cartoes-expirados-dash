@@ -127,6 +127,42 @@ GROUP BY 1, 2
 ORDER BY 1, 2
 """
 
+Q_ENTREGA_CICLO = f"""
+SELECT
+  REPLACE(EXPIRATION_DATE, '-', '') AS safra,
+  FLAG_CICLO_USO_TD                 AS ciclo,
+  DIAS_ENTREGA,
+  SUM(QTDE_TOTAL)                   AS qtde,
+  SUM(QTDE_ENTREGUE)                AS qtde_entregue
+FROM `{CUBO_TABLE}`
+WHERE FLAG_GRUPO = 'GRUPO1'
+  AND FLAG_CICLO_USO_TD IS NOT NULL
+GROUP BY 1, 2, 3
+ORDER BY 1, 2, 3
+"""
+
+Q_DIAS_V2 = f"""
+SELECT
+  REPLACE(cf.EXPIRATION_DATE, '-', '') AS safra,
+  DATE_DIFF(
+    CAST(t.DELIVERED_DATE AS DATE),
+    CAST(t.CREATE_DATE    AS DATE),
+    DAY
+  ) AS dias,
+  COUNT(DISTINCT t.CUS_CUST_ID) AS qtde
+FROM `{ANL_TABLE}` cf
+INNER JOIN `meli-bi-data.WHOWNER.LK_MP_CARDS_TRACKING` t
+  ON cf.CUS_CUST_ID = t.CUS_CUST_ID
+WHERE cf.FLAG_GRUPO = 'GRUPO1'
+  AND t.DELIVERED_DATE IS NOT NULL
+  AND t.SIT_SITE_ID   = 'MLB'
+  AND t.DBT_CARD_REQ_ACQUISITON_FLOW = 'renewal'
+  AND t.CARD_TYPE_GROUP = 'FISICA_DEBITO_HIBRIDA'
+  AND DATE_DIFF(CAST(t.DELIVERED_DATE AS DATE), CAST(t.CREATE_DATE AS DATE), DAY) BETWEEN 0 AND 60
+GROUP BY 1, 2
+ORDER BY 1, 2
+"""
+
 Q_SPENDING = f"""
 SELECT
   REPLACE(EXPIRATION_DATE, '-', '') AS safra,
@@ -207,6 +243,8 @@ def main():
     rows_funil      = run(Q_FUNIL)
     rows_spending   = run(Q_SPENDING)
     rows_dias       = run(Q_DIAS_ENTREGA)
+    rows_dias_v2    = run(Q_DIAS_V2)
+    rows_entrega_ciclo = run(Q_ENTREGA_CICLO)
 
     print(f'  MONTHLY: {len(rows_monthly)} safras')
     print(f'  TOTAL_GRUPO1: {len(rows_tg1)} safras')
@@ -214,6 +252,8 @@ def main():
     print(f'  FUNIL: {len(rows_funil)} safras')
     print(f'  SPENDING: {len(rows_spending)} safras')
     print(f'  DIAS_ENTREGA: {len(rows_dias)} linhas')
+    print(f'  DIAS_ENTREGA_V2: {len(rows_dias_v2)} linhas')
+    print(f'  ENTREGA_CICLO: {len(rows_entrega_ciclo)} linhas')
 
     # ── TOTAL_GRUPO1 dict ──────────────────────────────────────
     total_g1 = {r['safra']: int(r['qtde']) for r in rows_tg1}
@@ -311,6 +351,48 @@ def main():
 
     dias_dist_js = js_dist(dias_dist_by_safra) if dias_dist_by_safra else '{}'
 
+    # ── DIAS_ENTREGA_V2: dias inteiros por safra ────────────────
+    dias_v2_by_safra = {}
+    for r in rows_dias_v2:
+        safra = r['safra']
+        dias  = int(r['dias'] or 0)
+        qtde  = int(r['qtde'] or 0)
+        if qtde > 0:
+            if safra not in dias_v2_by_safra:
+                dias_v2_by_safra[safra] = {}
+            dias_v2_by_safra[safra][str(dias)] = dias_v2_by_safra[safra].get(str(dias), 0) + qtde
+
+    dias_v2_js = js_dist(dias_v2_by_safra) if dias_v2_by_safra else '{}'
+
+    # ── ENTREGA_CICLO: taxa de entrega e faixa por ciclo de uso ─
+    # Estrutura: { 'YYYYMM': { 'ciclo': { 'entregue': N, 'total': N, 'faixas': {...} } } }
+    entrega_ciclo = {}
+    for r in rows_entrega_ciclo:
+        safra  = r['safra']
+        ciclo  = str(r['ciclo'] or '')
+        faixa  = str(r['DIAS_ENTREGA'] or '')
+        qtde   = int(r['qtde'] or 0)
+        entregue = int(r['qtde_entregue'] or 0)
+        if not safra or not ciclo: continue
+        ec = entrega_ciclo.setdefault(safra, {}).setdefault(ciclo, {'total':0,'entregue':0,'faixas':{}})
+        ec['total']   += qtde
+        ec['entregue'] += entregue
+        if faixa:
+            ec['faixas'][faixa] = ec['faixas'].get(faixa, 0) + qtde
+
+    def js_entrega_ciclo(ec):
+        lines = []
+        for safra in sorted(ec.keys()):
+            ciclos = ec[safra]
+            inner = []
+            for ciclo, v in sorted(ciclos.items()):
+                faixas_str = ', '.join(f"'{f}': {n}" for f,n in sorted(v['faixas'].items()))
+                inner.append(f"    '{ciclo}': {{total:{v['total']}, entregue:{v['entregue']}, faixas:{{{faixas_str}}}}}")
+            lines.append(f"  '{safra}': {{\n" + ',\n'.join(inner) + '\n  }')
+        return '{\n' + ',\n'.join(lines) + '\n}'
+
+    entrega_ciclo_js = js_entrega_ciclo(entrega_ciclo) if entrega_ciclo else '{}'
+
     # ── Renderiza JS ──────────────────────────────────────────
     def js_arr(items, indent='  '):
         lines = []
@@ -364,6 +446,13 @@ const CICLO_SAFRA = {ciclo_safra_js};
 
 // ── DISTRIBUIÇÃO DIAS_ENTREGA POR FAIXA/MÊS ──────────────────
 const DIAS_ENTREGA_DIST = {dias_dist_js};
+
+// ── DISTRIBUIÇÃO DIAS_ENTREGA V2 (dias inteiros do tracking) ──
+const DIAS_ENTREGA_V2 = {dias_v2_js};
+
+// ── ENTREGA POR CICLO DE USO ───────────────────────────────────
+// { 'YYYYMM': { 'ciclo': { total, entregue, faixas:{...} } } }
+const ENTREGA_CICLO = {entrega_ciclo_js};
 
 // ── TOTAIS BQ — UNIVERSO COMPLETO ─────────────────────────────
 const TOTAL_EXPIRADO = {total_exp_js};

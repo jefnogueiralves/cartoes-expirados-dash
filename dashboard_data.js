@@ -145,11 +145,17 @@ const C_REI = {
 // ── DISTRIBUIÇÃO DIAS_ENTREGA POR FAIXA/MÊS ──────────────────
 // Gerado por update_data.py · faixas: chaves do objeto interno
 // Estrutura: { 'YYYYMM': { 'Faixa X': qtde, ... }, ... }
-// Enquanto não houver dado real do BQ, deixar vazio.
-const DIAS_ENTREGA_DIST = {
-  // Exemplo de como ficará após o BQ:
-  // '202505': { 'Até 5 dias': 800, '6-10 dias': 400, '11-15 dias': 120, '16-20 dias': 30, 'Mais de 20 dias': 4 },
-};
+const DIAS_ENTREGA_DIST = {};
+
+// ── DISTRIBUIÇÃO DIAS_ENTREGA V2 (dias inteiros do tracking) ──
+// Estrutura: { 'YYYYMM': { '3': 1200, '5': 800, '7': 300, ... } }
+// Gerado por update_data.py via Q_DIAS_V2 (LK_MP_CARDS_TRACKING)
+const DIAS_ENTREGA_V2 = {};
+
+// ── ENTREGA POR CICLO DE USO ───────────────────────────────────
+// Quem é mais ativo está recebendo o cartão?
+// { 'YYYYMM': { 'ciclo': { total, entregue, faixas:{...} } } }
+const ENTREGA_CICLO = {};
 
 // ── TOTAL GRUPO 2 (derivado) ──────────────────────────────────
 // GRUPO2 = expirados NÃO em GRUPO1 (todos INATIVO — sem renovações)
