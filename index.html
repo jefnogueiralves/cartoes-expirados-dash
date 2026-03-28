@@ -968,23 +968,6 @@
       </div>
     </div>
 
-    <div class="chart-row two">
-      <div class="chart-card">
-        <h3>Tendência Renovações</h3>
-        <div class="chart-sub"># proativo nos 90d pré-vencimento</div>
-        <div class="chart-wrap" style="height:240px">
-          <canvas id="chartRenov"></canvas>
-        </div>
-      </div>
-      <div class="chart-card">
-        <h3>Tendência Reemissões</h3>
-        <div class="chart-sub"># reativo pós-vencimento</div>
-        <div class="chart-wrap" style="height:240px">
-          <canvas id="chartReimis"></canvas>
-        </div>
-      </div>
-    </div>
-
     <div class="chart-row full">
       <div class="chart-card">
         <h3>Mix % — Renovações vs Reemissões</h3>
@@ -1749,28 +1732,6 @@ function initCharts() {
     }
   });
 
-  // chartRenov
-  charts.renov = new Chart(document.getElementById('chartRenov'), {
-    type:'bar',
-    data:{labels:D.meses, datasets:[{label:'Renovações',data:D.renovacoes,backgroundColor:C.yellow,borderRadius:4}]},
-    options:{responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false},
-        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:9},formatter:v=>fmt(v)}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}}}
-    }
-  });
-
-  // chartReimis
-  charts.reimis = new Chart(document.getElementById('chartReimis'), {
-    type:'bar',
-    data:{labels:D.meses, datasets:[{label:'Reemissões',data:D.reemissoes,backgroundColor:C.blue,borderRadius:4}]},
-    options:{responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false},
-        datalabels:{anchor:'end',align:'top',color:'#555',font:{size:9},formatter:v=>fmt(v)}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{callback:v=>fmt(v),font:{size:10}},grid:{color:'#eee'}}}
-    }
-  });
-
   // chartMainTab — copia do chartMain para a aba unificada
   charts.mainTab = new Chart(document.getElementById('chartMainTab'), {
     type:'bar',
@@ -2149,7 +2110,7 @@ function buildCicloSafraTable() {
   // Linha 1: cabeçalhos dos ciclos (colspan=2 cada)
   let h1 = `<tr style="background:#0a1422;">
     <th rowspan="2" style="${thLeft}border-bottom:2px solid #1e2d45;color:#94a3b8">Safra Exp.</th>
-    <th rowspan="2" style="${thBase}border-bottom:2px solid #1e2d45;color:#818cf8">Vol. G1</th>
+    <th rowspan="2" style="${thBase}border-bottom:2px solid #1e2d45;color:#818cf8"># Expirados</th>
     <th rowspan="2" style="${thBase}border-bottom:2px solid #1e2d45;color:#f1f5f9;font-weight:800">Renovados</th>`;
   CICLOS_DEF.forEach((c, i) => {
     const bl = (i === 5) ? 'border-left:2px solid #3a1e1e;' : (i === 0 ? 'border-left:2px solid #1e3a2f;' : '');
@@ -2190,7 +2151,7 @@ function buildCicloSafraTable() {
       CICLOS_DEF.forEach(cd => {
         const val        = ciclo[cd.k] || 0;
         const renovCiclo = totalRnv * cd.wRen;
-        const pctConv    = val > 0 ? Math.min(999, renovCiclo / val * 100) : 0;
+        const pctConv    = totalRnv > 0 ? (renovCiclo / totalRnv * 100) : 0;
         const share      = g1 > 0 ? (val / g1 * 100) : 0;
         cicloData[cd.k]  = { val, renovCiclo, pctConv, share };
         totValByCiclo[cd.k] += val;
@@ -2201,11 +2162,9 @@ function buildCicloSafraTable() {
   });
 
   // ── Linhas de dados (ordem reversa = mais recente primeiro) ─
-  ;[...rows].reverse().forEach((row, revIdx) => {
+  rows.forEach((row, chronIdx) => {
     const { mo, g1, totalRnv, ciclo, cicloData } = row;
     const isInc = !mo.completo;
-    // índice cronológico desta linha = rows.length - 1 - revIdx
-    const chronIdx = rows.length - 1 - revIdx;
     // linha anterior cronologicamente (para seta de tendência)
     const prevCicloData = chronIdx > 0 ? rows[chronIdx - 1].cicloData : null;
 
@@ -2261,7 +2220,7 @@ function buildCicloSafraTable() {
     const bl          = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
     const sumVal      = totValByCiclo[cd.k];
     const sumRen      = totRenByCiclo[cd.k];
-    const totPctConv  = sumVal > 0 ? Math.min(999, sumRen / sumVal * 100).toFixed(1)+'%' : '—';
+    const totPctConv  = totAll > 0 ? (sumRen / totAll * 100).toFixed(1)+'%' : '—';
     const totShare    = totTelG1 > 0 ? (sumVal / totTelG1 * 100).toFixed(1)+'%' : '—';
     totCicloHtml += `<td style="${tdBase}${bl}color:${cd.col};font-weight:700">${totPctConv}</td>`;
     totCicloHtml += `<td style="${tdBase}color:#94a3b8;border-right:1px dashed #1e2d45">${totShare}</td>`;
@@ -2477,20 +2436,6 @@ function updateCharts() {
     upDs(charts.combo, 'Reemissões', D.reemissoes);
     upDs(charts.combo, 'Dias Médios', D.diasMedios);
     charts.combo.update();
-  }
-
-  // chartRenov
-  if(charts.renov) {
-    charts.renov.data.labels = D.meses;
-    upDs(charts.renov, 'Renovações', D.renovacoes);
-    charts.renov.update();
-  }
-
-  // chartReimis
-  if(charts.reimis) {
-    charts.reimis.data.labels = D.meses;
-    upDs(charts.reimis, 'Reemissões', D.reemissoes);
-    charts.reimis.update();
   }
 
   // chartMainTab
