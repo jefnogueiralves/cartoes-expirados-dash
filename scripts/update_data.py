@@ -150,6 +150,9 @@ SELECT
   SUM(QTDE_DESBLOQUEADO)                AS ativados,
   SUM(QTDE_ATIVO_TC)                    AS ativos_tc,
   SUM(QTDE_ATIVO_TD)                    AS ativos_td,
+  -- QTDE_ATIVO_FISICO = TC OU TD pós-renovação (sem dupla contagem)
+  -- Disponível após re-execução de criar_tabelas.sql no BQ
+  SUM(COALESCE(QTDE_ATIVO_FISICO, 0))   AS ativos_fisico,
   SUM(TPV_TC_POS)                       AS tpv_tc,
   SUM(TPV_TD_POS)                       AS tpv_td,
 FROM `{CUBO_TABLE}`
@@ -358,13 +361,14 @@ def main():
         ativos_tc = int(r['ativos_tc'] or 0)
         ativos_td = int(r['ativos_td'] or 0)
         funil_data.append({
-            'safra':       safra,
-            'base':        int(r['base'] or 0),
-            'entregue':    int(r['entregue'] or 0),
-            'ativados':    int(r['ativados'] or 0),
-            'ativos_tc':   ativos_tc,
-            'ativos_td':   ativos_td,
-            'ativos_ambos': 0,   # requer query adicional por customer
+            'safra':         safra,
+            'base':          int(r['base'] or 0),
+            'entregue':      int(r['entregue'] or 0),
+            'ativados':      int(r['ativados'] or 0),
+            'ativos_tc':     ativos_tc,
+            'ativos_td':     ativos_td,
+            'ativos_fisico': int(r['ativos_fisico'] or 0),
+            'ativos_ambos':  0,
             'tpv_tc':      int(r['tpv_tc'] or 0),
             'tpv_td':      int(r['tpv_td'] or 0),
             'tpn_tc':      0,

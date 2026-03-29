@@ -3608,10 +3608,12 @@ function mesToSafra(mes) {
 }
 
 // ── FUNIL VISUAL ──────────────────────────────────────────────
-// Retorna qtde ativados dedupliciados: ativos_tc + ativos_td - ativos_ambos,
-// nunca excedendo ativados (QTDE_DESBLOQUEADO) para evitar taxa >100%.
+// Retorna qtde ativados físicos pós-renovação (TC OU TD, sem dupla contagem).
+// Usa ativos_fisico (QTDE_ATIVO_FISICO do BQ) quando disponível após
+// re-execução de criar_tabelas.sql. Fallback: min(tc+td-ambos, desb).
 function getFunilAtivos(fd) {
   if (!fd) return 0;
+  if (fd.ativos_fisico) return fd.ativos_fisico;
   const tc   = fd.ativos_tc   || 0;
   const td   = fd.ativos_td   || 0;
   const amb  = fd.ativos_ambos|| 0;
