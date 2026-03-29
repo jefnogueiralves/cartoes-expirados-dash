@@ -912,7 +912,7 @@
     <div class="chart-row full">
       <div class="chart-card">
         <h3>Evolução Mensal Detalhada</h3>
-        <div class="chart-sub">Renovações · Reemissões · Dias médios de entrega (eixo secundário)</div>
+        <div class="chart-sub">Híbrido · Puro Débito (barras) · % Conversão por produto (eixo secundário)</div>
         <div class="chart-wrap" style="height:260px">
           <canvas id="chartCombo"></canvas>
         </div>
@@ -1722,6 +1722,18 @@ function getProdRen(months, prodArr) {
     return r ? (r.ren + r.rei) : 0;
   });
 }
+function getProdConv(months, prod) {
+  const src = prod === 'HIBRIDO'
+    ? (typeof MONTHLY_HIBRIDO !== 'undefined' ? MONTHLY_HIBRIDO : [])
+    : (typeof MONTHLY_DEBITO  !== 'undefined' ? MONTHLY_DEBITO  : []);
+  return months.map(mes => {
+    const safra = mesToSafra(mes);
+    const total = TOTAL_GRUPO1[safra] || 0;
+    const r = src.find(m => m.mes === mes);
+    if (!r || !total) return 0;
+    return +((r.ren + r.rei) / total * 100).toFixed(1);
+  });
+}
 
 function getD() {
   const filtered = RAW_DATA.filter(r =>
@@ -1825,6 +1837,16 @@ function initCharts() {
   Chart.register(ChartDataLabels);
 
   // chartMain — G1 (amarelo) + G2 (cinza) empilhados
+  const _stackPctDl = {
+    display: ctx => ctx.raw > 0,
+    anchor:'center', align:'center',
+    color:'#333', font:{size:9, weight:'bold'},
+    formatter:(v,ctx)=>{
+      const total = ctx.chart.data.datasets.reduce((a,ds)=>a+(Number(ds.data[ctx.dataIndex])||0),0);
+      const pct = total>0?v/total*100:0;
+      return pct>=5?pct.toFixed(1)+'%':'';
+    }
+  };
   charts.main = new Chart(document.getElementById('chartMain'), {
     type:'bar',
     data:{
@@ -1835,7 +1857,7 @@ function initCharts() {
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:_stackPctDl},
       scales:{
         x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
         y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}},
@@ -1843,13 +1865,15 @@ function initCharts() {
     }
   });
 
-  // chartDonut
+  // chartDonut — G1 vs G2
   const kpi = getKpiD();
+  const _g1Tot = D.meses.reduce((a,_,i)=>a+D.renovacoes[i]+D.reemissoes[i],0);
+  const _g2Tot = getG2Renovados(D.meses).reduce((a,v)=>a+v,0);
   charts.donut = new Chart(document.getElementById('chartDonut'), {
     type:'doughnut',
     data:{
-      labels:['Renovações (90d antes)','Reemissões (pós-venc.)'],
-      datasets:[{data:[kpi.totalRen,kpi.totalRei], backgroundColor:[C.yellow,C.blue], borderWidth:0, hoverOffset:8}]
+      labels:['Grupo 1','Grupo 2'],
+      datasets:[{data:[_g1Tot,_g2Tot], backgroundColor:[C.yellow,'#94a3b8'], borderWidth:0, hoverOffset:8}]
     },
     options:{responsive:true, maintainAspectRatio:false, cutout:'68%',
       plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
@@ -1859,24 +1883,39 @@ function initCharts() {
     }
   });
 
-  // chartCombo — Híbrido (ouro) + Puro Débito (azul) + Dias Médios
+  // chartCombo — Híbrido (ouro) + Puro Débito (azul) + linhas % conversão
   charts.combo = new Chart(document.getElementById('chartCombo'), {
     type:'bar',
     data:{
       labels:D.meses,
       datasets:[
-        {label:'Híbrido',     data:getProdRen(D.meses,'HIBRIDO'),    backgroundColor:'rgba(250,204,21,.85)', borderColor:'#facc15', borderWidth:1, borderRadius:3, stack:'p', yAxisID:'y'},
-        {label:'Puro Débito', data:getProdRen(D.meses,'PURO DEBITO'),backgroundColor:'rgba(56,189,248,.85)', borderColor:'#38bdf8', borderWidth:1, borderRadius:3, stack:'p', yAxisID:'y'},
-        {label:'Dias Médios', type:'line', data:D.diasMedios, borderColor:C.orange, borderWidth:1.5,
-          pointRadius:2, pointBackgroundColor:'#fff', pointBorderColor:C.orange, fill:false, tension:.4, yAxisID:'y2'},
+        {label:'Híbrido',          data:getProdRen(D.meses,'HIBRIDO'),    backgroundColor:'rgba(250,204,21,.85)', borderColor:'#facc15', borderWidth:1, borderRadius:3, stack:'p', yAxisID:'y'},
+        {label:'Puro Débito',      data:getProdRen(D.meses,'PURO DEBITO'),backgroundColor:'rgba(56,189,248,.85)', borderColor:'#38bdf8', borderWidth:1, borderRadius:3, stack:'p', yAxisID:'y'},
+        {label:'% Conv. Híbrido',  type:'line', data:getProdConv(D.meses,'HIBRIDO'),    borderColor:'#16a34a', borderWidth:2,
+          pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#16a34a', fill:false, tension:.4, yAxisID:'y2'},
+        {label:'% Conv. Déb.',     type:'line', data:getProdConv(D.meses,'DEBITO'),     borderColor:'#6366f1', borderWidth:2,
+          pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor:'#6366f1', fill:false, tension:.4, yAxisID:'y2'},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+        datalabels:{
+          display: ctx => ctx.dataset.type !== 'line' && ctx.raw > 0,
+          anchor:'center', align:'center',
+          color:'#333', font:{size:9, weight:'bold'},
+          formatter:(v,ctx)=>{
+            const total = ctx.chart.data.datasets
+              .filter(ds=>ds.type!=='line')
+              .reduce((a,ds)=>a+(Number(ds.data[ctx.dataIndex])||0),0);
+            const pct = total>0?v/total*100:0;
+            return pct>=5?pct.toFixed(1)+'%':'';
+          }
+        }
+      },
       scales:{
         x:{stacked:true, grid:{display:false},ticks:{font:{size:10}}},
         y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}, position:'left'},
-        y2:{beginAtZero:false, ticks:{callback:v=>v+'d',font:{size:10}}, position:'right', grid:{display:false}},
+        y2:{beginAtZero:true, ticks:{callback:v=>v+'%',font:{size:10}}, position:'right', grid:{display:false}},
       }
     }
   });
@@ -1892,7 +1931,7 @@ function initCharts() {
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
+      plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:_stackPctDl},
       scales:{
         x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
         y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}},
@@ -2899,18 +2938,21 @@ function updateCharts() {
     charts.main.update();
   }
 
-  // chartDonut
+  // chartDonut — G1 vs G2
   if(charts.donut) {
-    charts.donut.data.datasets[0].data = [kpi.totalRen, kpi.totalRei];
+    const _g1 = D.meses.reduce((a,_,i)=>a+D.renovacoes[i]+D.reemissoes[i],0);
+    const _g2 = getG2Renovados(D.meses).reduce((a,v)=>a+v,0);
+    charts.donut.data.datasets[0].data = [_g1, _g2];
     charts.donut.update();
   }
 
   // chartCombo
   if(charts.combo) {
     charts.combo.data.labels = D.meses;
-    upDs(charts.combo, 'Híbrido',     getProdRen(D.meses,'HIBRIDO'));
-    upDs(charts.combo, 'Puro Débito', getProdRen(D.meses,'PURO DEBITO'));
-    upDs(charts.combo, 'Dias Médios', D.diasMedios);
+    upDs(charts.combo, 'Híbrido',         getProdRen(D.meses,'HIBRIDO'));
+    upDs(charts.combo, 'Puro Débito',     getProdRen(D.meses,'PURO DEBITO'));
+    upDs(charts.combo, '% Conv. Híbrido', getProdConv(D.meses,'HIBRIDO'));
+    upDs(charts.combo, '% Conv. Déb.',    getProdConv(D.meses,'DEBITO'));
     charts.combo.update();
   }
 
