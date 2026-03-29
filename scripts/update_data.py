@@ -146,6 +146,7 @@ Q_FUNIL = f"""
 SELECT
   REPLACE(EXPIRATION_DATE, '-', '') AS safra,
   SUM(QTDE_RENOVADOS + QTDE_REEMITIDOS) AS base,
+  SUM(QTDE_ENTREGUE)                    AS entregue,
   SUM(QTDE_DESBLOQUEADO)                AS ativados,
   SUM(QTDE_ATIVO_TC)                    AS ativos_tc,
   SUM(QTDE_ATIVO_TD)                    AS ativos_td,
@@ -359,6 +360,7 @@ def main():
         funil_data.append({
             'safra':       safra,
             'base':        int(r['base'] or 0),
+            'entregue':    int(r['entregue'] or 0),
             'ativados':    int(r['ativados'] or 0),
             'ativos_tc':   ativos_tc,
             'ativos_td':   ativos_td,

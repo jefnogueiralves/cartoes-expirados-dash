@@ -1142,7 +1142,7 @@
     <div class="chart-row full">
       <div class="chart-card">
         <h3>Funil por Safra — # Absoluto</h3>
-        <div class="chart-sub">Elegíveis → Solicitações → Entregues · cada barra é uma safra de vencimento</div>
+        <div class="chart-sub">Expirados → Renovados → Entregue → Desbloqueados → Ativados · cada barra é uma safra de vencimento</div>
         <div class="chart-wrap" style="height:280px">
           <canvas id="chartFunil"></canvas>
         </div>
@@ -1152,7 +1152,7 @@
     <div class="chart-row full">
       <div class="chart-card">
         <h3>Taxa de Conversão por Etapa (%)</h3>
-        <div class="chart-sub">% Solicitações / Elegíveis · % Entregues / Solicitações · % Ativados / Entregues</div>
+        <div class="chart-sub">% Renovados/Expirados · % Entregue/Renovados · % Desbloqueados/Entregue · % Ativados/Desbloqueados</div>
         <div class="chart-wrap" style="height:220px">
           <canvas id="chartFunilPct"></canvas>
         </div>
@@ -2068,15 +2068,18 @@ function initCharts() {
     }
   });
 
-  // chartFunil — funil absoluto (elegíveis, solicitações, entregues)
+  // chartFunil — funil absoluto (expirados → renovados → entregue → desbloqueados → ativados)
+  const _funilFdMap = m => FUNIL_DATA.find(d=>d.safra===mesToSafra(m));
   charts.funil = new Chart(document.getElementById('chartFunil'), {
     type:'bar',
     data:{
       labels: D.meses,
       datasets:[
-        {label:'Elegíveis', data:D.elegiveis, backgroundColor:'rgba(255,230,0,.3)', borderColor:'#FFE600', borderWidth:1.5, borderRadius:3},
-        {label:'Solicitações (Ren+Rei)', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:'rgba(0,158,227,.5)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
-        {label:'Entregues', data:D.entregues, backgroundColor:'rgba(0,166,80,.5)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+        {label:'Expirados',     data:D.elegiveis, backgroundColor:'rgba(255,230,0,.3)', borderColor:'#FFE600', borderWidth:1.5, borderRadius:3},
+        {label:'Renovados',     data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:'rgba(0,158,227,.5)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'Entregue',      data:D.meses.map(m=>{const s=mesToSafra(m); const fd=_funilFdMap(m); return getFunilEntregue(s,fd);}), backgroundColor:'rgba(0,166,80,.5)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+        {label:'Desbloqueados', data:D.meses.map(m=>{const fd=_funilFdMap(m); return fd?(fd.ativados||0):0;}), backgroundColor:'rgba(124,58,237,.5)', borderColor:'#7C3AED', borderWidth:1.5, borderRadius:3},
+        {label:'Ativados',      data:D.meses.map(m=>{const fd=_funilFdMap(m); return fd?((fd.ativos_tc||0)+(fd.ativos_td||0)):0;}), backgroundColor:'rgba(255,107,0,.5)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
@@ -2090,21 +2093,34 @@ function initCharts() {
   });
 
   // chartFunilPct — taxas de conversão por etapa
-  const pctSol = D.meses.map((_,i) => {
+  const _fpPctSol  = D.meses.map((_,i) => {
     const tel=D.elegiveis[i], sol=D.renovacoes[i]+D.reemissoes[i];
     return tel ? +(sol/tel*100).toFixed(1) : 0;
   });
-  const pctEnt = D.meses.map((_,i) => {
-    const sol=D.renovacoes[i]+D.reemissoes[i], ent=D.entregues[i];
-    return sol ? +(ent/sol*100).toFixed(1) : 0;
+  const _fpPctEnt  = D.meses.map(m => {
+    const fd=_funilFdMap(m); const sol=MONTHLY.find(mo=>mo.mes===m);
+    const s=(sol?sol.ren+sol.rei:0), e=getFunilEntregue(mesToSafra(m),fd);
+    return s ? +(e/s*100).toFixed(1) : 0;
+  });
+  const _fpPctDesb = D.meses.map(m => {
+    const fd=_funilFdMap(m);
+    const e=getFunilEntregue(mesToSafra(m),fd), d=fd?(fd.ativados||0):0;
+    return e ? +(d/e*100).toFixed(1) : 0;
+  });
+  const _fpPctAtiv = D.meses.map(m => {
+    const fd=_funilFdMap(m);
+    const d=fd?(fd.ativados||0):0, a=fd?((fd.ativos_tc||0)+(fd.ativos_td||0)):0;
+    return d ? +(a/d*100).toFixed(1) : 0;
   });
   charts.funilPct = new Chart(document.getElementById('chartFunilPct'), {
     type:'bar',
     data:{
       labels: D.meses,
       datasets:[
-        {label:'% Solicitações / Elegíveis', data:pctSol, backgroundColor:'rgba(0,158,227,.6)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
-        {label:'% Entregues / Solicitações', data:pctEnt, backgroundColor:'rgba(0,166,80,.6)',  borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+        {label:'% Renovados / Expirados',     data:_fpPctSol,  backgroundColor:'rgba(0,158,227,.6)',   borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'% Entregue / Renovados',       data:_fpPctEnt,  backgroundColor:'rgba(0,166,80,.6)',    borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+        {label:'% Desbloqueados / Entregue',   data:_fpPctDesb, backgroundColor:'rgba(124,58,237,.6)', borderColor:'#7C3AED', borderWidth:1.5, borderRadius:3},
+        {label:'% Ativados / Desbloqueados',   data:_fpPctAtiv, backgroundColor:'rgba(255,107,0,.6)',  borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
@@ -3084,21 +3100,28 @@ function updateCharts() {
 
   // chartFunil
   if(charts.funil) {
+    const _ffMap = m => FUNIL_DATA.find(d=>d.safra===mesToSafra(m));
     charts.funil.data.labels = D.meses;
-    const sol = D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]);
     charts.funil.data.datasets[0].data = D.elegiveis;
-    charts.funil.data.datasets[1].data = sol;
-    charts.funil.data.datasets[2].data = D.entregues;
+    charts.funil.data.datasets[1].data = D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]);
+    charts.funil.data.datasets[2].data = D.meses.map(m=>{const s=mesToSafra(m); return getFunilEntregue(s,_ffMap(m));});
+    charts.funil.data.datasets[3].data = D.meses.map(m=>{const fd=_ffMap(m); return fd?(fd.ativados||0):0;});
+    charts.funil.data.datasets[4].data = D.meses.map(m=>{const fd=_ffMap(m); return fd?((fd.ativos_tc||0)+(fd.ativos_td||0)):0;});
     charts.funil.update();
   }
 
   // chartFunilPct
   if(charts.funilPct) {
+    const _ffMap2 = m => FUNIL_DATA.find(d=>d.safra===mesToSafra(m));
     charts.funilPct.data.labels = D.meses;
-    const pSol = D.meses.map((_,i)=>D.elegiveis[i]?+(( D.renovacoes[i]+D.reemissoes[i])/D.elegiveis[i]*100).toFixed(1):0);
-    const pEnt = D.meses.map((_,i)=>{ const s=D.renovacoes[i]+D.reemissoes[i]; return s?+(D.entregues[i]/s*100).toFixed(1):0; });
-    charts.funilPct.data.datasets[0].data = pSol;
-    charts.funilPct.data.datasets[1].data = pEnt;
+    const upSol  = D.meses.map((_,i)=>D.elegiveis[i]?+((D.renovacoes[i]+D.reemissoes[i])/D.elegiveis[i]*100).toFixed(1):0);
+    const upEnt  = D.meses.map(m=>{const fd=_ffMap2(m); const mo=MONTHLY.find(x=>x.mes===m); const s=mo?mo.ren+mo.rei:0; const e=getFunilEntregue(mesToSafra(m),fd); return s?+(e/s*100).toFixed(1):0;});
+    const upDesb = D.meses.map(m=>{const fd=_ffMap2(m); const e=getFunilEntregue(mesToSafra(m),fd); const d=fd?(fd.ativados||0):0; return e?+(d/e*100).toFixed(1):0;});
+    const upAtiv = D.meses.map(m=>{const fd=_ffMap2(m); const d=fd?(fd.ativados||0):0; const a=fd?((fd.ativos_tc||0)+(fd.ativos_td||0)):0; return d?+(a/d*100).toFixed(1):0;});
+    charts.funilPct.data.datasets[0].data = upSol;
+    charts.funilPct.data.datasets[1].data = upEnt;
+    charts.funilPct.data.datasets[2].data = upDesb;
+    charts.funilPct.data.datasets[3].data = upAtiv;
     charts.funilPct.update();
   }
 
@@ -3585,6 +3608,15 @@ function mesToSafra(mes) {
 }
 
 // ── FUNIL VISUAL ──────────────────────────────────────────────
+// Retorna qtde entregue para uma safra — usa fd.entregue se disponível,
+// senão soma ENTREGA_CICLO[safra][ciclo].entregue como fallback.
+function getFunilEntregue(safra, fd) {
+  if (fd && typeof fd.entregue === 'number') return fd.entregue;
+  const ec = (typeof ENTREGA_CICLO !== 'undefined') ? ENTREGA_CICLO[safra] : null;
+  if (!ec) return 0;
+  return Object.values(ec).reduce((a, v) => a + (v.entregue || 0), 0);
+}
+
 function renderFunil(containerId, stages) {
   // stages = [{label, value, color, dark}]
   const el = document.getElementById(containerId);
@@ -3612,12 +3644,13 @@ function renderFunil(containerId, stages) {
   }).join('');
 }
 
-function getFunilStages(tel, sol, ent, ativ) {
+function getFunilStages(tel, sol, ent, desb, ativ) {
   return [
-    {label:'Elegiveis',    value: tel,  color:'#FFE600', dark:true},
-    {label:'Solicitacoes', value: sol,  color:'#009EE3', dark:false},
-    {label:'Entregues',    value: ent,  color:'#00A650', dark:false},
-    {label:'Ativados',     value: ativ, color:'#FF6B00', dark:false},
+    {label:'Expirados',     value: tel,  color:'#FFE600', dark:true},
+    {label:'Renovados',     value: sol,  color:'#009EE3', dark:false},
+    {label:'Entregue',      value: ent,  color:'#00A650', dark:false},
+    {label:'Desbloqueados', value: desb, color:'#7C3AED', dark:false},
+    {label:'Ativados',      value: ativ, color:'#FF6B00', dark:false},
   ];
 }
 
@@ -3627,9 +3660,11 @@ function buildFunilVisual() {
   // Funil total (responsivo aos filtros)
   const totalTel  = D.elegiveis.reduce((a,b)=>a+b,0);
   const totalSol  = D.meses.reduce((a,_,i)=>a+D.renovacoes[i]+D.reemissoes[i],0);
-  const totalEnt  = D.entregues.reduce((a,b)=>a+b,0);
   const safrasMMSet = new Set([...state.safras].map(mes => mesToSafra(mes)));
-  const totalAtiv = FUNIL_DATA.filter(d=>safrasMMSet.has(d.safra)).reduce((a,d)=>a+d.ativados,0);
+  const _fdSel = FUNIL_DATA.filter(d=>safrasMMSet.has(d.safra));
+  const totalEnt  = _fdSel.reduce((a,d)=>a+getFunilEntregue(d.safra,d),0);
+  const totalDesb = _fdSel.reduce((a,d)=>a+(d.ativados||0),0);
+  const totalAtiv = _fdSel.reduce((a,d)=>a+(d.ativos_tc||0)+(d.ativos_td||0),0);
   const safrasSel = [...state.safras];
   const elSub = document.getElementById('fn-total-sub');
   if(elSub) elSub.textContent = safrasSel.length === MONTHLY.length
@@ -3637,7 +3672,7 @@ function buildFunilVisual() {
     : safrasSel.length === 1
       ? safrasSel[0]
       : safrasSel.length+' safras selecionadas';
-  renderFunil('funil-total', getFunilStages(totalTel, totalSol, totalEnt, totalAtiv));
+  renderFunil('funil-total', getFunilStages(totalTel, totalSol, totalEnt, totalDesb, totalAtiv));
 
   // Últimas duas safras completas
   const completasDesc = MONTHLY.filter(m=>m.completo).slice().reverse();
@@ -3650,11 +3685,12 @@ function buildFunilVisual() {
     const fd    = FUNIL_DATA.find(d=>d.safra===safra);
     const tel   = mo.tel || 0;
     const sol   = mo.ren + mo.rei;
-    const ent   = mo.ent;
-    const ativ  = fd ? fd.ativados : 0;
+    const ent   = getFunilEntregue(safra, fd);
+    const desb  = fd ? (fd.ativados||0) : 0;
+    const ativ  = fd ? ((fd.ativos_tc||0)+(fd.ativos_td||0)) : 0;
     const titleEl = document.getElementById('fn-'+key+'-title');
     if(titleEl) titleEl.textContent = mo.mes;
-    renderFunil('funil-'+key, getFunilStages(tel, sol, ent, ativ));
+    renderFunil('funil-'+key, getFunilStages(tel, sol, ent, desb, ativ));
   });
 }
 
