@@ -1214,24 +1214,15 @@
       <div class="chart-card">
         <h3>TPV TC — Trajetória por Safra</h3>
         <div class="chart-sub">Crédito físico · linha vermelha = mês de expiração · meses −3 a +3 estimados da janela 90d</div>
-        <div class="chart-wrap" style="height:320px">
+        <div class="chart-wrap" style="height:380px">
           <canvas id="chartFunilTlTc"></canvas>
         </div>
       </div>
       <div class="chart-card">
         <h3>TPV TD — Trajetória por Safra</h3>
         <div class="chart-sub">Débito físico · linha vermelha = mês de expiração · meses −3 a +3 estimados da janela 90d</div>
-        <div class="chart-wrap" style="height:320px">
+        <div class="chart-wrap" style="height:380px">
           <canvas id="chartFunilTlTd"></canvas>
-        </div>
-      </div>
-    </div>
-    <div class="chart-row full">
-      <div class="chart-card">
-        <h3>TPV Total (TC + TD) — Trajetória por Safra</h3>
-        <div class="chart-sub">R$ combinado · cada linha = uma safra · queda no mês de expiração e recuperação pós-renovação</div>
-        <div class="chart-wrap" style="height:300px">
-          <canvas id="chartFunilTlTotal"></canvas>
         </div>
       </div>
     </div>
@@ -2178,10 +2169,10 @@ function initCharts() {
     data:{
       labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
       datasets:[
-        {label:'Base Renovada', data:FUNIL_DATA.map(d=>d.base), backgroundColor:'rgba(255,230,0,.4)', borderColor:'#FFE600', borderWidth:1.5, borderRadius:3},
-        {label:'Ativados (TC ou TD)', data:FUNIL_DATA.map(d=>d.ativados), backgroundColor:'rgba(0,158,227,.6)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
-        {label:'Ativos TC', data:FUNIL_DATA.map(d=>d.ativos_tc), backgroundColor:'rgba(0,166,80,.6)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
-        {label:'Ativos TD', data:FUNIL_DATA.map(d=>d.ativos_td), backgroundColor:'rgba(255,107,0,.6)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
+        {label:'Base Renovada',       data:FUNIL_DATA.map(d=>d.base), backgroundColor:'rgba(255,230,0,.4)', borderColor:'#FFE600', borderWidth:1.5, borderRadius:3},
+        {label:'Ativados (TC ou TD)', data:FUNIL_DATA.map(d=>getFunilAtivos(d)), backgroundColor:'rgba(0,158,227,.6)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'Ativos TC',           data:FUNIL_DATA.map(d=>d.ativos_tc), backgroundColor:'rgba(0,166,80,.6)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+        {label:'Ativos TD',           data:FUNIL_DATA.map(d=>d.ativos_td), backgroundColor:'rgba(255,107,0,.6)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
@@ -2200,9 +2191,9 @@ function initCharts() {
     data:{
       labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
       datasets:[
-        {label:'% Ativados / Base', data:FUNIL_DATA.map(d=>d.base?+(d.ativados/d.base*100).toFixed(1):0), backgroundColor:'rgba(0,158,227,.6)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
-        {label:'% TC / Ativados', data:FUNIL_DATA.map(d=>d.ativados?+(d.ativos_tc/d.ativados*100).toFixed(1):0), backgroundColor:'rgba(0,166,80,.6)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
-        {label:'% TD / Ativados', data:FUNIL_DATA.map(d=>d.ativados?+(d.ativos_td/d.ativados*100).toFixed(1):0), backgroundColor:'rgba(255,107,0,.6)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
+        {label:'% Ativados / Base', data:FUNIL_DATA.map(d=>d.base?+(getFunilAtivos(d)/d.base*100).toFixed(1):0), backgroundColor:'rgba(0,158,227,.6)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
+        {label:'% TC / Ativados',  data:FUNIL_DATA.map(d=>{const a=getFunilAtivos(d); return a?+(d.ativos_tc/a*100).toFixed(1):0;}), backgroundColor:'rgba(0,166,80,.6)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
+        {label:'% TD / Ativados',  data:FUNIL_DATA.map(d=>{const a=getFunilAtivos(d); return a?+(d.ativos_td/a*100).toFixed(1):0;}), backgroundColor:'rgba(255,107,0,.6)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
@@ -2221,9 +2212,9 @@ function initCharts() {
     data:{
       labels: FUNIL_DATA.map(d=>safraLabel(d.safra)),
       datasets:[
+        {label:'Ativados Únicos (TC ou TD)', data:FUNIL_DATA.map(d=>getFunilAtivos(d)), backgroundColor:'rgba(124,58,237,.7)', borderColor:'#7C3AED', borderWidth:1.5, borderRadius:3},
         {label:'Ativos TC', data:FUNIL_DATA.map(d=>d.ativos_tc), backgroundColor:'rgba(0,158,227,.7)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
         {label:'Ativos TD', data:FUNIL_DATA.map(d=>d.ativos_td), backgroundColor:'rgba(0,166,80,.7)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
-        {label:'Ambos TC+TD', data:FUNIL_DATA.map(d=>d.ativos_ambos), backgroundColor:'rgba(255,107,0,.7)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
@@ -2940,23 +2931,21 @@ function buildSpendingTimeline() {
     { type:'line', data:{labels:X,datasets:dsTd}, options:makeOpts('TPV TD'), plugins:[vline] });
 
   // ── Funil tab ──
-  ['funilTlTc','funilTlTd','funilTlTotal'].forEach(k => {
+  ['funilTlTc','funilTlTd'].forEach(k => {
     if (charts[k]) { charts[k].destroy(); charts[k] = null; }
   });
   const elFtc = document.getElementById('chartFunilTlTc');
   const elFtd = document.getElementById('chartFunilTlTd');
-  const elFtt = document.getElementById('chartFunilTlTotal');
-  if (elFtc) charts.funilTlTc    = new Chart(elFtc, { type:'line', data:{labels:X,datasets:dsTc.map(d=>({...d}))},   options:makeOpts('TPV TC'),       plugins:[vline] });
-  if (elFtd) charts.funilTlTd    = new Chart(elFtd, { type:'line', data:{labels:X,datasets:dsTd.map(d=>({...d}))},   options:makeOpts('TPV TD'),       plugins:[vline] });
-  if (elFtt) charts.funilTlTotal = new Chart(elFtt, { type:'line', data:{labels:X,datasets:dsTotal.map(d=>({...d}))},options:makeOpts('TPV TC + TD'),  plugins:[vline] });
+  if (elFtc) charts.funilTlTc = new Chart(elFtc, { type:'line', data:{labels:X,datasets:dsTc.map(d=>({...d}))}, options:makeOpts('TPV TC'), plugins:[vline] });
+  if (elFtd) charts.funilTlTd = new Chart(elFtd, { type:'line', data:{labels:X,datasets:dsTd.map(d=>({...d}))}, options:makeOpts('TPV TD'), plugins:[vline] });
 
   // ── SPENDING MÉDIO POR USUÁRIO ─────────────────────────────
   const spendChartIds = [
-    {id:'chartSpendTlTc',    tcKey:true,  tdKey:false, atvKey:'ativos_tc'},
-    {id:'chartSpendTlTd',    tcKey:false, tdKey:true,  atvKey:'ativos_td'},
-    {id:'chartSpendTlTotal', tcKey:true,  tdKey:true,  atvKey:'ativados'},
+    {id:'chartSpendTlTc',    tcKey:true,  tdKey:false, atvFn: d=>d.ativos_tc||1},
+    {id:'chartSpendTlTd',    tcKey:false, tdKey:true,  atvFn: d=>d.ativos_td||1},
+    {id:'chartSpendTlTotal', tcKey:true,  tdKey:true,  atvFn: d=>getFunilAtivos(d)||1},
   ];
-  spendChartIds.forEach(({id, tcKey, tdKey, atvKey}) => {
+  spendChartIds.forEach(({id, tcKey, tdKey, atvFn}) => {
     const el = document.getElementById(id);
     if (!el) return;
     if (charts[id]) { charts[id].destroy(); delete charts[id]; }
@@ -2968,7 +2957,7 @@ function buildSpendingTimeline() {
       if (!antes && !dep) return;
       const color = palette[i % palette.length];
       const base  = dep ? (dep.base || 1) : 1;
-      const atv   = dep ? (dep[atvKey] || 1) : 1;
+      const atv   = dep ? atvFn(dep) : 1;
       let tpvBeforeTotal = 0;
       if (tcKey && antes) tpvBeforeTotal += (antes.tpv_tc_antes || 0);
       if (tdKey && antes) tpvBeforeTotal += (antes.tpv_td_antes || 0);
