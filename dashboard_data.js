@@ -22,15 +22,6 @@ const MONTHLY = [
   {mes:'Jan/26', completo:true, ren:27374, rei:2104, ent:19567, dm:4.10, tel:38177},
   {mes:'Fev/26', completo:true, ren:14121, rei:1398, ent:9739, dm:4.00, tel:20976},
   {mes:'Mar/26*', completo:false, ren:9804, rei:0, ent:4939, dm:3.90, tel:15982},
-  {mes:'Abr/26', completo:true, ren:2762, rei:0, ent:7, dm:3.60, tel:22562},
-  {mes:'Mai/26', completo:true, ren:2454, rei:0, ent:7, dm:3.50, tel:42916},
-  {mes:'Jun/26', completo:true, ren:0, rei:0, ent:0, dm:5.00, tel:33456},
-  {mes:'Jul/26', completo:true, ren:0, rei:0, ent:0, dm:5.00, tel:29570},
-  {mes:'Ago/26', completo:true, ren:0, rei:0, ent:0, dm:5.00, tel:20696},
-  {mes:'Set/26', completo:true, ren:3, rei:0, ent:3, dm:3.50, tel:30505},
-  {mes:'Out/26', completo:true, ren:21, rei:0, ent:20, dm:5.30, tel:40361},
-  {mes:'Nov/26', completo:true, ren:1, rei:0, ent:1, dm:6.00, tel:11926},
-  {mes:'Dez/26', completo:true, ren:3, rei:0, ent:3, dm:6.70, tel:6},
 ];
 
 // ── SUMÁRIO EXECUTIVO ─────────────────────────────────────────
@@ -58,15 +49,6 @@ const FUNIL_DATA = [
   {safra:'202601', base:29478, ativados:19567, ativos_tc:11159, ativos_td:12988, ativos_ambos:0, tpv_tc:20827493, tpv_td:19302199, tpn_tc:0, tpn_td:0, maps_tc:11159, maps_td:12988},
   {safra:'202602', base:15519, ativados:9739, ativos_tc:5637, ativos_td:5537, ativos_ambos:0, tpv_tc:8767317, tpv_td:5993134, tpn_tc:0, tpn_td:0, maps_tc:5637, maps_td:5537},
   {safra:'202603', base:9804, ativados:4939, ativos_tc:2961, ativos_td:2955, ativos_ambos:0, tpv_tc:3084911, tpv_td:1906497, tpn_tc:0, tpn_td:0, maps_tc:2961, maps_td:2955},
-  {safra:'202604', base:2762, ativados:7, ativos_tc:840, ativos_td:710, ativos_ambos:0, tpv_tc:1176156, tpv_td:630663, tpn_tc:0, tpn_td:0, maps_tc:840, maps_td:710},
-  {safra:'202605', base:2454, ativados:7, ativos_tc:624, ativos_td:618, ativos_ambos:0, tpv_tc:474326, tpv_td:306726, tpn_tc:0, tpn_td:0, maps_tc:624, maps_td:618},
-  {safra:'202606', base:0, ativados:0, ativos_tc:0, ativos_td:0, ativos_ambos:0, tpv_tc:0, tpv_td:0, tpn_tc:0, tpn_td:0, maps_tc:0, maps_td:0},
-  {safra:'202607', base:0, ativados:0, ativos_tc:0, ativos_td:0, ativos_ambos:0, tpv_tc:0, tpv_td:0, tpn_tc:0, tpn_td:0, maps_tc:0, maps_td:0},
-  {safra:'202608', base:0, ativados:0, ativos_tc:0, ativos_td:0, ativos_ambos:0, tpv_tc:0, tpv_td:0, tpn_tc:0, tpn_td:0, maps_tc:0, maps_td:0},
-  {safra:'202609', base:3, ativados:3, ativos_tc:0, ativos_td:2, ativos_ambos:0, tpv_tc:0, tpv_td:497, tpn_tc:0, tpn_td:0, maps_tc:0, maps_td:2},
-  {safra:'202610', base:21, ativados:20, ativos_tc:9, ativos_td:13, ativos_ambos:0, tpv_tc:11725, tpv_td:14408, tpn_tc:0, tpn_td:0, maps_tc:9, maps_td:13},
-  {safra:'202611', base:1, ativados:1, ativos_tc:1, ativos_td:1, ativos_ambos:0, tpv_tc:583, tpv_td:823, tpn_tc:0, tpn_td:0, maps_tc:1, maps_td:1},
-  {safra:'202612', base:3, ativados:3, ativos_tc:0, ativos_td:0, ativos_ambos:0, tpv_tc:0, tpv_td:0, tpn_tc:0, tpn_td:0, maps_tc:0, maps_td:0},
 ];
 
 // ── SPENDING ANTES DA RENOVAÇÃO ───────────────────────────────
@@ -83,15 +65,6 @@ const SPENDING_ANTES = [
   {safra:'202601', tpv_tc_antes:29432347.99, tpv_td_antes:32353048.57, tpn_tc_antes:0, tpn_td_antes:0},
   {safra:'202602', tpv_tc_antes:17485707.81, tpv_td_antes:15489675.83, tpn_tc_antes:0, tpn_td_antes:0},
   {safra:'202603', tpv_tc_antes:12708467.72, tpv_td_antes:10532038.86, tpn_tc_antes:0, tpn_td_antes:0},
-  {safra:'202604', tpv_tc_antes:15997261.46, tpv_td_antes:13244461.29, tpn_tc_antes:0, tpn_td_antes:0},
-  {safra:'202605', tpv_tc_antes:21928589.70, tpv_td_antes:17327601.98, tpn_tc_antes:0, tpn_td_antes:0},
-  {safra:'202606', tpv_tc_antes:10065114.93, tpv_td_antes:11872350.53, tpn_tc_antes:0, tpn_td_antes:0},
-  {safra:'202607', tpv_tc_antes:0.00, tpv_td_antes:0.00, tpn_tc_antes:0, tpn_td_antes:0},
-  {safra:'202608', tpv_tc_antes:0.00, tpv_td_antes:0.00, tpn_tc_antes:0, tpn_td_antes:0},
-  {safra:'202609', tpv_tc_antes:702.00, tpv_td_antes:0.00, tpn_tc_antes:0, tpn_td_antes:0},
-  {safra:'202610', tpv_tc_antes:29878.10, tpv_td_antes:33251.08, tpn_tc_antes:0, tpn_td_antes:0},
-  {safra:'202611', tpv_tc_antes:0.00, tpv_td_antes:0.00, tpn_tc_antes:0, tpn_td_antes:0},
-  {safra:'202612', tpv_tc_antes:1439.70, tpv_td_antes:20.00, tpn_tc_antes:0, tpn_td_antes:0},
 ];
 
 // ── CICLO DE USO POR SAFRA ─────────────────────────────────────
@@ -108,15 +81,6 @@ const CICLO_SAFRA = [
   {safra:'202601', c1:8313, c2:2035, c3:2115, c4:1240, c5:1672, c6:9950, c7:4153},
   {safra:'202602', c1:4077, c2:1431, c3:700, c4:531, c5:860, c6:4668, c7:3252},
   {safra:'202603', c1:2638, c2:556, c3:417, c4:341, c5:443, c6:2980, c7:2429},
-  {safra:'202604', c1:504, c2:164, c3:120, c4:90, c5:115, c6:852, c7:917},
-  {safra:'202605', c1:535, c2:152, c3:108, c4:69, c5:102, c6:767, c7:721},
-  {safra:'202606', c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0},
-  {safra:'202607', c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0},
-  {safra:'202608', c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0},
-  {safra:'202609', c1:0, c2:0, c3:2, c4:0, c5:0, c6:1, c7:0},
-  {safra:'202610', c1:11, c2:0, c3:0, c4:2, c5:0, c6:7, c7:1},
-  {safra:'202611', c1:1, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0},
-  {safra:'202612', c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:3},
 ];
 
 // ── DISTRIBUIÇÃO DIAS_ENTREGA POR FAIXA/MÊS ──────────────────
@@ -132,16 +96,7 @@ const DIAS_ENTREGA_DIST = {
   '202512': {'00. CARTAO NAO ENTREGUE': 1571, '01. ATE 2 DIAS': 8637, '02. ATE 5 DIAS': 27157, '03. ATE 7 DIAS': 11274, '04. ATE 10 DIAS': 3732, '05. ACIMA DE 10 DIAS': 2604, '06. NAO RENOVADO': 22722},
   '202601': {'00. CARTAO NAO ENTREGUE': 613, '01. ATE 2 DIAS': 5930, '02. ATE 5 DIAS': 13704, '03. ATE 7 DIAS': 4872, '04. ATE 10 DIAS': 1448, '05. ACIMA DE 10 DIAS': 807, '06. NAO RENOVADO': 10803},
   '202602': {'00. CARTAO NAO ENTREGUE': 356, '01. ATE 2 DIAS': 2915, '02. ATE 5 DIAS': 7301, '03. ATE 7 DIAS': 2530, '04. ATE 10 DIAS': 676, '05. ACIMA DE 10 DIAS': 343, '06. NAO RENOVADO': 6857},
-  '202603': {'00. CARTAO NAO ENTREGUE': 869, '01. ATE 2 DIAS': 2012, '02. ATE 5 DIAS': 4701, '03. ATE 7 DIAS': 1589, '04. ATE 10 DIAS': 506, '05. ACIMA DE 10 DIAS': 127, '06. NAO RENOVADO': 6178},
-  '202604': {'00. CARTAO NAO ENTREGUE': 268, '01. ATE 2 DIAS': 684, '02. ATE 5 DIAS': 1350, '03. ATE 7 DIAS': 337, '04. ATE 10 DIAS': 79, '05. ACIMA DE 10 DIAS': 44, '06. NAO RENOVADO': 19800},
-  '202605': {'00. CARTAO NAO ENTREGUE': 371, '01. ATE 2 DIAS': 657, '02. ATE 5 DIAS': 1060, '03. ATE 7 DIAS': 266, '04. ATE 10 DIAS': 66, '05. ACIMA DE 10 DIAS': 34, '06. NAO RENOVADO': 40462},
-  '202606': {'06. NAO RENOVADO': 33456},
-  '202607': {'06. NAO RENOVADO': 29570},
-  '202608': {'06. NAO RENOVADO': 20696},
-  '202609': {'02. ATE 5 DIAS': 3, '06. NAO RENOVADO': 30503},
-  '202610': {'01. ATE 2 DIAS': 2, '02. ATE 5 DIAS': 11, '03. ATE 7 DIAS': 3, '04. ATE 10 DIAS': 3, '05. ACIMA DE 10 DIAS': 2, '06. NAO RENOVADO': 40347},
-  '202611': {'03. ATE 7 DIAS': 1, '06. NAO RENOVADO': 11925},
-  '202612': {'02. ATE 5 DIAS': 2, '05. ACIMA DE 10 DIAS': 1, '06. NAO RENOVADO': 3}
+  '202603': {'00. CARTAO NAO ENTREGUE': 869, '01. ATE 2 DIAS': 2012, '02. ATE 5 DIAS': 4701, '03. ATE 7 DIAS': 1589, '04. ATE 10 DIAS': 506, '05. ACIMA DE 10 DIAS': 127, '06. NAO RENOVADO': 6178}
 };
 
 // ── DISTRIBUIÇÃO DIAS_ENTREGA V2 (dias inteiros do tracking) ──
@@ -157,13 +112,7 @@ const DIAS_ENTREGA_V2 = {
   '202512': {'0': 1, '1': 1676, '10': 671, '11': 463, '12': 336, '13': 265, '14': 154, '15': 104, '16': 98, '17': 70, '18': 73, '19': 58, '2': 6961, '20': 50, '21': 66, '22': 53, '23': 44, '24': 31, '25': 49, '26': 44, '27': 56, '28': 52, '29': 47, '3': 9532, '30': 34, '31': 32, '32': 35, '33': 21, '34': 25, '35': 27, '36': 17, '37': 22, '38': 25, '39': 18, '4': 9206, '40': 20, '41': 15, '42': 13, '43': 14, '44': 9, '45': 14, '46': 7, '47': 8, '48': 6, '49': 5, '5': 8419, '50': 7, '51': 5, '52': 6, '53': 11, '54': 5, '55': 1, '56': 5, '57': 6, '58': 3, '59': 5, '6': 6707, '60': 1, '7': 4567, '8': 2070, '9': 991},
   '202601': {'1': 1374, '10': 194, '11': 139, '12': 92, '13': 44, '14': 35, '15': 32, '16': 22, '17': 25, '18': 24, '19': 19, '2': 4556, '20': 22, '21': 32, '22': 19, '23': 16, '24': 20, '25': 19, '26': 15, '27': 16, '28': 17, '29': 10, '3': 5097, '30': 10, '31': 5, '32': 5, '33': 12, '34': 11, '35': 10, '36': 4, '37': 13, '38': 11, '39': 6, '4': 4379, '40': 5, '41': 3, '42': 7, '43': 5, '44': 7, '45': 5, '46': 3, '47': 2, '48': 7, '49': 4, '5': 4229, '50': 3, '51': 3, '52': 2, '53': 3, '54': 1, '56': 1, '57': 1, '58': 1, '6': 3210, '60': 1, '7': 1662, '8': 884, '9': 370},
   '202602': {'1': 635, '10': 69, '11': 49, '12': 33, '13': 24, '14': 12, '15': 12, '16': 14, '17': 14, '18': 15, '19': 9, '2': 2279, '20': 8, '21': 11, '22': 11, '23': 10, '24': 9, '25': 12, '26': 5, '27': 4, '28': 11, '29': 7, '3': 2956, '30': 7, '31': 8, '32': 7, '33': 1, '34': 2, '35': 3, '36': 1, '37': 6, '38': 2, '39': 3, '4': 2164, '40': 3, '42': 7, '44': 4, '45': 1, '47': 2, '48': 1, '49': 1, '5': 2181, '51': 1, '52': 1, '57': 1, '6': 1656, '60': 1, '7': 874, '8': 416, '9': 191},
-  '202603': {'0': 1, '1': 449, '10': 53, '11': 20, '12': 13, '13': 10, '14': 6, '15': 9, '16': 10, '17': 5, '18': 10, '19': 7, '2': 1715, '20': 2, '21': 3, '22': 3, '23': 5, '24': 5, '26': 1, '27': 1, '28': 2, '29': 1, '3': 1811, '30': 1, '31': 3, '32': 3, '33': 2, '35': 1, '36': 1, '37': 2, '4': 1529, '40': 1, '41': 2, '44': 1, '5': 1391, '53': 1, '6': 1052, '7': 551, '8': 320, '9': 136},
-  '202604': {'1': 42, '10': 13, '11': 8, '12': 7, '13': 4, '14': 2, '15': 3, '16': 1, '17': 3, '18': 1, '2': 650, '21': 2, '22': 2, '23': 3, '24': 1, '28': 1, '3': 716, '34': 1, '37': 1, '4': 349, '44': 1, '45': 1, '47': 1, '5': 293, '53': 1, '6': 250, '7': 89, '8': 43, '9': 25},
-  '202605': {'1': 41, '10': 11, '11': 4, '12': 4, '13': 1, '14': 1, '15': 1, '16': 7, '17': 2, '19': 1, '2': 628, '21': 7, '22': 6, '23': 2, '24': 1, '25': 3, '26': 4, '3': 557, '4': 266, '5': 243, '6': 201, '7': 69, '8': 36, '9': 20},
-  '202609': {'3': 1, '4': 1},
-  '202610': {'1': 1, '10': 1, '11': 1, '21': 1, '3': 1, '4': 5, '5': 2, '7': 3, '8': 1, '9': 1},
-  '202611': {'7': 1},
-  '202612': {'16': 1, '3': 1, '5': 1}
+  '202603': {'0': 1, '1': 449, '10': 53, '11': 20, '12': 13, '13': 10, '14': 6, '15': 9, '16': 10, '17': 5, '18': 10, '19': 7, '2': 1715, '20': 2, '21': 3, '22': 3, '23': 5, '24': 5, '26': 1, '27': 1, '28': 2, '29': 1, '3': 1811, '30': 1, '31': 3, '32': 3, '33': 2, '35': 1, '36': 1, '37': 2, '4': 1529, '40': 1, '41': 2, '44': 1, '5': 1391, '53': 1, '6': 1052, '7': 551, '8': 320, '9': 136}
 };
 
 // ── ENTREGA POR CICLO DE USO ───────────────────────────────────
@@ -271,78 +220,6 @@ const ENTREGA_CICLO = {
     '05. 121 A 180 D': {total:933, entregue:373, faixas:{'00. CARTAO NAO ENTREGUE': 37, '01. ATE 2 DIAS': 82, '02. ATE 5 DIAS': 200, '03. ATE 7 DIAS': 89, '04. ATE 10 DIAS': 30, '05. ACIMA DE 10 DIAS': 5, '06. NAO RENOVADO': 490}},
     '06. ACIMA DE 180 D': {total:5399, entregue:2466, faixas:{'00. CARTAO NAO ENTREGUE': 304, '01. ATE 2 DIAS': 582, '02. ATE 5 DIAS': 1420, '03. ATE 7 DIAS': 471, '04. ATE 10 DIAS': 167, '05. ACIMA DE 10 DIAS': 36, '06. NAO RENOVADO': 2419}},
     '07. NAO ATIVO': {total:3971, entregue:2041, faixas:{'00. CARTAO NAO ENTREGUE': 193, '01. ATE 2 DIAS': 556, '02. ATE 5 DIAS': 1152, '03. ATE 7 DIAS': 391, '04. ATE 10 DIAS': 108, '05. ACIMA DE 10 DIAS': 29, '06. NAO RENOVADO': 1542}}
-  },
-  '202604': {
-    '01. 1 A 30 D': {total:4874, entregue:414, faixas:{'00. CARTAO NAO ENTREGUE': 83, '01. ATE 2 DIAS': 108, '02. ATE 5 DIAS': 225, '03. ATE 7 DIAS': 61, '04. ATE 10 DIAS': 20, '05. ACIMA DE 10 DIAS': 7, '06. NAO RENOVADO': 4370}},
-    '02. 31 A 60 D': {total:1176, entregue:140, faixas:{'00. CARTAO NAO ENTREGUE': 20, '01. ATE 2 DIAS': 25, '02. ATE 5 DIAS': 94, '03. ATE 7 DIAS': 18, '04. ATE 10 DIAS': 4, '05. ACIMA DE 10 DIAS': 3, '06. NAO RENOVADO': 1012}},
-    '03. 61 A 90 D': {total:959, entregue:103, faixas:{'00. CARTAO NAO ENTREGUE': 17, '01. ATE 2 DIAS': 32, '02. ATE 5 DIAS': 53, '03. ATE 7 DIAS': 12, '04. ATE 10 DIAS': 3, '05. ACIMA DE 10 DIAS': 3, '06. NAO RENOVADO': 839}},
-    '04. 91 A 120 D': {total:891, entregue:78, faixas:{'00. CARTAO NAO ENTREGUE': 9, '01. ATE 2 DIAS': 18, '02. ATE 5 DIAS': 42, '03. ATE 7 DIAS': 14, '04. ATE 10 DIAS': 3, '05. ACIMA DE 10 DIAS': 4, '06. NAO RENOVADO': 801}},
-    '05. 121 A 180 D': {total:1314, entregue:104, faixas:{'00. CARTAO NAO ENTREGUE': 11, '01. ATE 2 DIAS': 26, '02. ATE 5 DIAS': 52, '03. ATE 7 DIAS': 20, '04. ATE 10 DIAS': 5, '05. ACIMA DE 10 DIAS': 1, '06. NAO RENOVADO': 1199}},
-    '06. ACIMA DE 180 D': {total:7301, entregue:773, faixas:{'00. CARTAO NAO ENTREGUE': 70, '01. ATE 2 DIAS': 221, '02. ATE 5 DIAS': 424, '03. ATE 7 DIAS': 102, '04. ATE 10 DIAS': 23, '05. ACIMA DE 10 DIAS': 12, '06. NAO RENOVADO': 6449}},
-    '07. NAO ATIVO': {total:6047, entregue:853, faixas:{'00. CARTAO NAO ENTREGUE': 58, '01. ATE 2 DIAS': 254, '02. ATE 5 DIAS': 460, '03. ATE 7 DIAS': 110, '04. ATE 10 DIAS': 21, '05. ACIMA DE 10 DIAS': 14, '06. NAO RENOVADO': 5130}}
-  },
-  '202605': {
-    '01. 1 A 30 D': {total:10631, entregue:413, faixas:{'00. CARTAO NAO ENTREGUE': 110, '01. ATE 2 DIAS': 142, '02. ATE 5 DIAS': 219, '03. ATE 7 DIAS': 39, '04. ATE 10 DIAS': 20, '05. ACIMA DE 10 DIAS': 5, '06. NAO RENOVADO': 10096}},
-    '02. 31 A 60 D': {total:2615, entregue:120, faixas:{'00. CARTAO NAO ENTREGUE': 29, '01. ATE 2 DIAS': 33, '02. ATE 5 DIAS': 62, '03. ATE 7 DIAS': 15, '04. ATE 10 DIAS': 8, '05. ACIMA DE 10 DIAS': 5, '06. NAO RENOVADO': 2463}},
-    '03. 61 A 90 D': {total:1919, entregue:89, faixas:{'00. CARTAO NAO ENTREGUE': 16, '01. ATE 2 DIAS': 31, '02. ATE 5 DIAS': 40, '03. ATE 7 DIAS': 20, '05. ACIMA DE 10 DIAS': 1, '06. NAO RENOVADO': 1811}},
-    '04. 91 A 120 D': {total:1629, entregue:53, faixas:{'00. CARTAO NAO ENTREGUE': 14, '01. ATE 2 DIAS': 13, '02. ATE 5 DIAS': 31, '03. ATE 7 DIAS': 10, '05. ACIMA DE 10 DIAS': 1, '06. NAO RENOVADO': 1560}},
-    '05. 121 A 180 D': {total:2554, entregue:77, faixas:{'00. CARTAO NAO ENTREGUE': 20, '01. ATE 2 DIAS': 28, '02. ATE 5 DIAS': 33, '03. ATE 7 DIAS': 15, '04. ATE 10 DIAS': 4, '05. ACIMA DE 10 DIAS': 2, '06. NAO RENOVADO': 2452}},
-    '06. ACIMA DE 180 D': {total:12665, entregue:643, faixas:{'00. CARTAO NAO ENTREGUE': 106, '01. ATE 2 DIAS': 197, '02. ATE 5 DIAS': 340, '03. ATE 7 DIAS': 93, '04. ATE 10 DIAS': 17, '05. ACIMA DE 10 DIAS': 14, '06. NAO RENOVADO': 11898}},
-    '07. NAO ATIVO': {total:10903, entregue:633, faixas:{'00. CARTAO NAO ENTREGUE': 76, '01. ATE 2 DIAS': 213, '02. ATE 5 DIAS': 335, '03. ATE 7 DIAS': 74, '04. ATE 10 DIAS': 17, '05. ACIMA DE 10 DIAS': 6, '06. NAO RENOVADO': 10182}}
-  },
-  '202606': {
-    '01. 1 A 30 D': {total:18974, entregue:0, faixas:{'06. NAO RENOVADO': 18974}},
-    '02. 31 A 60 D': {total:4543, entregue:0, faixas:{'06. NAO RENOVADO': 4543}},
-    '03. 61 A 90 D': {total:3091, entregue:0, faixas:{'06. NAO RENOVADO': 3091}},
-    '04. 91 A 120 D': {total:2648, entregue:0, faixas:{'06. NAO RENOVADO': 2648}},
-    '05. 121 A 180 D': {total:3959, entregue:0, faixas:{'06. NAO RENOVADO': 3959}},
-    '06. ACIMA DE 180 D': {total:241, entregue:0, faixas:{'06. NAO RENOVADO': 241}}
-  },
-  '202607': {
-    '01. 1 A 30 D': {total:17442, entregue:0, faixas:{'06. NAO RENOVADO': 17442}},
-    '02. 31 A 60 D': {total:4375, entregue:0, faixas:{'06. NAO RENOVADO': 4375}},
-    '03. 61 A 90 D': {total:3111, entregue:0, faixas:{'06. NAO RENOVADO': 3111}},
-    '04. 91 A 120 D': {total:2601, entregue:0, faixas:{'06. NAO RENOVADO': 2601}},
-    '05. 121 A 180 D': {total:1837, entregue:0, faixas:{'06. NAO RENOVADO': 1837}},
-    '06. ACIMA DE 180 D': {total:204, entregue:0, faixas:{'06. NAO RENOVADO': 204}}
-  },
-  '202608': {
-    '01. 1 A 30 D': {total:13113, entregue:0, faixas:{'06. NAO RENOVADO': 13113}},
-    '02. 31 A 60 D': {total:3302, entregue:0, faixas:{'06. NAO RENOVADO': 3302}},
-    '03. 61 A 90 D': {total:2337, entregue:0, faixas:{'06. NAO RENOVADO': 2337}},
-    '04. 91 A 120 D': {total:1802, entregue:0, faixas:{'06. NAO RENOVADO': 1802}},
-    '05. 121 A 180 D': {total:23, entregue:0, faixas:{'06. NAO RENOVADO': 23}},
-    '06. ACIMA DE 180 D': {total:119, entregue:0, faixas:{'06. NAO RENOVADO': 119}}
-  },
-  '202609': {
-    '01. 1 A 30 D': {total:21763, entregue:0, faixas:{'06. NAO RENOVADO': 21763}},
-    '02. 31 A 60 D': {total:5253, entregue:0, faixas:{'06. NAO RENOVADO': 5253}},
-    '03. 61 A 90 D': {total:3309, entregue:2, faixas:{'02. ATE 5 DIAS': 2, '06. NAO RENOVADO': 3307}},
-    '04. 91 A 120 D': {total:29, entregue:0, faixas:{'06. NAO RENOVADO': 29}},
-    '05. 121 A 180 D': {total:20, entregue:0, faixas:{'06. NAO RENOVADO': 20}},
-    '06. ACIMA DE 180 D': {total:131, entregue:1, faixas:{'02. ATE 5 DIAS': 1, '06. NAO RENOVADO': 130}},
-    '07. NAO ATIVO': {total:1, entregue:0, faixas:{'06. NAO RENOVADO': 1}}
-  },
-  '202610': {
-    '01. 1 A 30 D': {total:33388, entregue:11, faixas:{'01. ATE 2 DIAS': 2, '02. ATE 5 DIAS': 8, '03. ATE 7 DIAS': 1, '06. NAO RENOVADO': 33377}},
-    '02. 31 A 60 D': {total:6724, entregue:0, faixas:{'06. NAO RENOVADO': 6724}},
-    '03. 61 A 90 D': {total:42, entregue:0, faixas:{'06. NAO RENOVADO': 42}},
-    '04. 91 A 120 D': {total:17, entregue:2, faixas:{'02. ATE 5 DIAS': 1, '03. ATE 7 DIAS': 1, '06. NAO RENOVADO': 15}},
-    '05. 121 A 180 D': {total:30, entregue:0, faixas:{'06. NAO RENOVADO': 30}},
-    '06. ACIMA DE 180 D': {total:164, entregue:7, faixas:{'02. ATE 5 DIAS': 2, '03. ATE 7 DIAS': 1, '04. ATE 10 DIAS': 2, '05. ACIMA DE 10 DIAS': 2, '06. NAO RENOVADO': 157}},
-    '07. NAO ATIVO': {total:3, entregue:1, faixas:{'04. ATE 10 DIAS': 1, '06. NAO RENOVADO': 2}}
-  },
-  '202611': {
-    '01. 1 A 30 D': {total:11855, entregue:1, faixas:{'03. ATE 7 DIAS': 1, '06. NAO RENOVADO': 11854}},
-    '02. 31 A 60 D': {total:17, entregue:0, faixas:{'06. NAO RENOVADO': 17}},
-    '03. 61 A 90 D': {total:8, entregue:0, faixas:{'06. NAO RENOVADO': 8}},
-    '04. 91 A 120 D': {total:3, entregue:0, faixas:{'06. NAO RENOVADO': 3}},
-    '05. 121 A 180 D': {total:7, entregue:0, faixas:{'06. NAO RENOVADO': 7}},
-    '06. ACIMA DE 180 D': {total:36, entregue:0, faixas:{'06. NAO RENOVADO': 36}}
-  },
-  '202612': {
-    '06. ACIMA DE 180 D': {total:2, entregue:0, faixas:{'06. NAO RENOVADO': 2}},
-    '07. NAO ATIVO': {total:4, entregue:3, faixas:{'02. ATE 5 DIAS': 2, '05. ACIMA DE 10 DIAS': 1, '06. NAO RENOVADO': 1}}
   }
 };
 
@@ -361,15 +238,6 @@ const TOTAL_EXPIRADO = {
   '202601':214075,
   '202602':103236,
   '202603':84273,
-  '202604':123496,
-  '202605':210803,
-  '202606':296125,
-  '202607':274908,
-  '202608':208324,
-  '202609':341961,
-  '202610':474455,
-  '202611':181608,
-  '202612':432945,
 };
 const TOTAL_GRUPO1 = {
   '202504':19,
@@ -384,15 +252,6 @@ const TOTAL_GRUPO1 = {
   '202601':38177,
   '202602':20976,
   '202603':15982,
-  '202604':22562,
-  '202605':42916,
-  '202606':33456,
-  '202607':29570,
-  '202608':20696,
-  '202609':30505,
-  '202610':40361,
-  '202611':11926,
-  '202612':6,
 };
 
 // ── DIMENSÕES DOS FILTROS ─────────────────────────────────────
