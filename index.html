@@ -2412,11 +2412,11 @@ function buildFaixaTable() {
   const thS = 'padding:6px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.3px;text-align:center;white-space:nowrap;';
 
   // Cabeçalho: faixa | mês1 | mês2 | ... | TOTAL
-  thead.innerHTML = `<tr style="background:#0a1422;border-bottom:2px solid #1e2d45;">
-    <th style="${thS}text-align:left;color:#64748b">Faixa</th>
-    ${safras.map(s=>`<th style="${thS}color:#818cf8">${safraLabel(s)}</th>`).join('')}
-    <th style="${thS}color:#f1f5f9;border-left:2px solid #1e2d45">Total</th>
-    <th style="${thS}color:#64748b">%</th>
+  thead.innerHTML = `<tr style="background:#1e293b;border-bottom:2px solid #334155;">
+    <th style="${thS}text-align:left;color:#94a3b8">Faixa</th>
+    ${safras.map(s=>`<th style="${thS}color:#93c5fd">${safraLabel(s)}</th>`).join('')}
+    <th style="${thS}color:#f1f5f9;border-left:2px solid #334155">Total</th>
+    <th style="${thS}color:#94a3b8">%</th>
   </tr>`;
 
   // Totais por safra (para % por coluna)
@@ -2436,7 +2436,7 @@ function buildFaixaTable() {
   const fmtN = v => v >= 1000 ? (v/1000).toFixed(1)+'K' : v;
 
   // Linhas de faixa
-  tbody.innerHTML = faixas.map(f => {
+  tbody.innerHTML = faixas.map((f, fi) => {
     const cor = FAIXA_COR[f] || '#94a3b8';
     const totF = totByFaixa[f];
     const pct = grandTotal > 0 ? (totF/grandTotal*100).toFixed(1)+'%' : '—';
@@ -2444,31 +2444,32 @@ function buildFaixaTable() {
       const v   = DIAS_ENTREGA_DIST[s][f] || 0;
       const tot = totBySafra[s];
       const p   = tot > 0 ? (v/tot*100).toFixed(1) : '0.0';
-      return `<td style="${tdS}">
-        <span style="color:${cor};font-weight:600">${fmtN(v)}</span>
-        <span style="color:#475569;font-size:10px;margin-left:3px">${p}%</span>
+      return `<td style="${tdS}background:#fff;">
+        <span style="color:#1e293b;font-weight:600">${fmtN(v)}</span>
+        <span style="color:${cor};font-size:10px;margin-left:3px;font-weight:600">${p}%</span>
       </td>`;
     }).join('');
-    return `<tr style="border-bottom:1px solid #1e2d45;background:#0a1628;" onmouseenter="this.style.background='#0f1e38'" onmouseleave="this.style.background='#0a1628'">
-      <td style="padding:5px 10px;font-size:11px;color:${cor};font-weight:600;white-space:nowrap">${f}</td>
+    const rowBg = fi % 2 === 0 ? '#f8fafc' : '#fff';
+    return `<tr style="border-bottom:1px solid #e2e8f0;background:${rowBg}" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='${rowBg}'">
+      <td style="padding:5px 10px;font-size:11px;color:${cor};font-weight:700;white-space:nowrap;background:${rowBg}">${f}</td>
       ${cells}
-      <td style="${tdS}font-weight:700;color:#f1f5f9;border-left:2px solid #1e2d45">${fmtN(totF)}</td>
-      <td style="${tdS}color:#64748b">${pct}</td>
+      <td style="${tdS}font-weight:700;color:#1e293b;border-left:2px solid #cbd5e1;background:${rowBg}">${fmtN(totF)}</td>
+      <td style="${tdS}color:#64748b;font-weight:600;background:${rowBg}">${pct}</td>
     </tr>`;
   }).join('');
 
   // Linha de média ponderada
   const avgCells = safras.map(s => {
     const dm = calcDmFromDist(s);
-    return `<td style="${tdS}font-weight:700;color:#fb923c">${dm !== null ? dm+'d' : '—'}</td>`;
+    return `<td style="${tdS}font-weight:700;color:#ea580c;background:#fff7ed">${dm !== null ? dm.toFixed(1)+'d' : '—'}</td>`;
   }).join('');
   const allDms = safras.map(s => calcDmFromDist(s)).filter(v=>v!==null);
   const avgGeral = allDms.length ? (allDms.reduce((a,v)=>a+v,0)/allDms.length).toFixed(1)+'d' : '—';
-  tbody.innerHTML += `<tr style="background:#060e1c;font-weight:700;border-top:2px solid #1e2d45;">
-    <td style="padding:6px 10px;font-size:11px;color:#fb923c">Média (dias)</td>
+  tbody.innerHTML += `<tr style="background:#fff7ed;font-weight:700;border-top:2px solid #cbd5e1;">
+    <td style="padding:6px 10px;font-size:11px;color:#ea580c;font-weight:700">Média (dias)</td>
     ${avgCells}
-    <td style="${tdS}font-weight:800;color:#fb923c;border-left:2px solid #1e2d45">${avgGeral}</td>
-    <td style="${tdS}color:#475569">—</td>
+    <td style="${tdS}font-weight:800;color:#ea580c;border-left:2px solid #cbd5e1;background:#fff7ed">${avgGeral}</td>
+    <td style="${tdS}color:#94a3b8;background:#fff7ed">—</td>
   </tr>`;
 }
 
@@ -2525,19 +2526,30 @@ function buildEntregaCicloTable() {
   const tdS = 'padding:5px 10px;text-align:center;font-size:11px;font-variant-numeric:tabular-nums;';
   const fmt = v => v>=1000?(v/1000).toFixed(1)+'K':String(v);
 
+  const FAIXA_COR2 = {
+    '01. ATE 2 DIAS':          '#16a34a',
+    '02. ATE 5 DIAS':          '#0d9488',
+    '03. ATE 7 DIAS':          '#d97706',
+    '04. ATE 10 DIAS':         '#ea580c',
+    '05. ACIMA DE 10 DIAS':    '#dc2626',
+    '00. CARTAO NAO ENTREGUE': '#64748b',
+    '06. NAO RENOVADO':        '#94a3b8',
+  };
+
   // Cabeçalho
-  thead.innerHTML = `<tr style="background:#0a1422;border-bottom:2px solid #1e2d45;">
-    <th style="${thS}text-align:left;color:#64748b">Ciclo de Uso</th>
-    <th style="${thS}color:#818cf8"># Total</th>
+  thead.innerHTML = `<tr style="background:#1e293b;border-bottom:2px solid #334155;">
+    <th style="${thS}text-align:left;color:#94a3b8">Ciclo de Uso</th>
+    <th style="${thS}color:#93c5fd"># Total</th>
     <th style="${thS}color:#4ade80">Entregues</th>
     <th style="${thS}color:#fb923c">% Entrega</th>
-    <th style="${thS}color:#fb923c;border-left:1px solid #1e2d45">Prazo Médio</th>
-    ${faixas.map(f=>`<th style="${thS}color:#64748b">${f.replace(/^\d+\.\s*/,'')}</th>`).join('')}
+    <th style="${thS}color:#fb923c;border-left:1px solid #334155">Prazo Médio</th>
+    ${faixas.map(f=>`<th style="${thS}color:${FAIXA_COR2[f]||'#94a3b8'}">${f.replace(/^\d+\.\s*/,'')}</th>`).join('')}
   </tr>`;
 
-  const totais = {total:0,entregue:0};
+  const totais = {total:0, entregue:0, faixas:{}};
+  faixas.forEach(f => totais.faixas[f] = 0);
 
-  const rows = ORDEM_CICLO.map(k => {
+  const rows = ORDEM_CICLO.map((k, ki) => {
     const {label, col} = CICLOS_LABEL[k];
     const d = agg[k];
     totais.total    += d.total;
@@ -2552,27 +2564,36 @@ function buildEntregaCicloTable() {
     const pm = pmTotal > 0 ? (pmDias/pmTotal).toFixed(1)+'d' : '—';
     const faixaCells = faixas.map(f => {
       const v = d.faixas[f]||0;
+      totais.faixas[f] = (totais.faixas[f]||0) + v;
       const pct = d.total>0?(v/d.total*100).toFixed(1):'0.0';
-      return `<td style="${tdS}"><span style="color:#f1f5f9">${fmt(v)}</span><span style="color:#475569;font-size:10px;margin-left:3px">${pct}%</span></td>`;
+      const cor = FAIXA_COR2[f]||'#64748b';
+      return `<td style="${tdS}background:#fff"><span style="color:#1e293b;font-weight:600">${fmt(v)}</span><span style="color:${cor};font-size:10px;margin-left:3px;font-weight:600">${pct}%</span></td>`;
     }).join('');
-    return `<tr style="border-bottom:1px solid #1e2d45;background:#0a1628;" onmouseenter="this.style.background='#0f1e38'" onmouseleave="this.style.background='#0a1628'">
-      <td style="padding:5px 10px;font-size:11px;font-weight:700;color:${col};white-space:nowrap">${label}</td>
-      <td style="${tdS}color:#a5b4fc">${fmt(d.total)}</td>
-      <td style="${tdS}color:#4ade80">${fmt(d.entregue)}</td>
-      <td style="${tdS}color:#fb923c;font-weight:700">${pctEnt}</td>
-      <td style="${tdS}color:#fb923c;border-left:1px solid #1e2d45;font-weight:700">${pm}</td>
+    const rowBg = ki % 2 === 0 ? '#f8fafc' : '#fff';
+    return `<tr style="border-bottom:1px solid #e2e8f0;background:${rowBg}" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='${rowBg}'">
+      <td style="padding:5px 10px;font-size:11px;font-weight:700;color:${col};white-space:nowrap;background:${rowBg}">${label}</td>
+      <td style="${tdS}color:#3b82f6;font-weight:600;background:${rowBg}">${fmt(d.total)}</td>
+      <td style="${tdS}color:#16a34a;font-weight:600;background:${rowBg}">${fmt(d.entregue)}</td>
+      <td style="${tdS}color:#ea580c;font-weight:700;background:${rowBg}">${pctEnt}</td>
+      <td style="${tdS}color:#ea580c;border-left:1px solid #cbd5e1;font-weight:700;background:${rowBg}">${pm}</td>
       ${faixaCells}
     </tr>`;
   }).join('');
 
   const pctTot = totais.total>0?(totais.entregue/totais.total*100).toFixed(1)+'%':'—';
-  tbody.innerHTML = rows + `<tr style="background:#060e1c;font-weight:700;border-top:2px solid #1e2d45;">
-    <td style="padding:6px 10px;font-size:11px;color:#f1f5f9">TOTAL</td>
-    <td style="${tdS}color:#a5b4fc">${fmt(totais.total)}</td>
-    <td style="${tdS}color:#4ade80">${fmt(totais.entregue)}</td>
-    <td style="${tdS}color:#fb923c;font-weight:800">${pctTot}</td>
-    <td style="${tdS}color:#475569;border-left:1px solid #1e2d45">—</td>
-    ${faixas.map(()=>`<td style="${tdS}color:#475569">—</td>`).join('')}
+  const totalFaixaCells = faixas.map(f => {
+    const v = totais.faixas[f]||0;
+    const pct = totais.total>0?(v/totais.total*100).toFixed(1):'0.0';
+    const cor = FAIXA_COR2[f]||'#64748b';
+    return `<td style="${tdS}background:#f1f5f9;font-weight:700"><span style="color:#1e293b">${fmt(v)}</span><span style="color:${cor};font-size:10px;margin-left:3px;font-weight:700">${pct}%</span></td>`;
+  }).join('');
+  tbody.innerHTML = rows + `<tr style="background:#f1f5f9;font-weight:700;border-top:2px solid #94a3b8;">
+    <td style="padding:6px 10px;font-size:11px;color:#1e293b;font-weight:800">TOTAL</td>
+    <td style="${tdS}color:#3b82f6;font-weight:800;background:#f1f5f9">${fmt(totais.total)}</td>
+    <td style="${tdS}color:#16a34a;font-weight:800;background:#f1f5f9">${fmt(totais.entregue)}</td>
+    <td style="${tdS}color:#ea580c;font-weight:800;background:#f1f5f9">${pctTot}</td>
+    <td style="${tdS}color:#94a3b8;border-left:1px solid #cbd5e1;background:#f1f5f9">—</td>
+    ${totalFaixaCells}
   </tr>`;
 }
 
@@ -2647,19 +2668,19 @@ function buildFaixaDiasChart() {
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { position:'top', labels:{ color:'#ccc', boxWidth:12, font:{size:11} } },
-        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}%` } },
+        legend: { position:'top', labels:{ color:'#333', boxWidth:12, font:{size:11} } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%` } },
         datalabels: {
-          display: ctx => ctx.raw >= 8,
+          display: ctx => ctx.raw >= 5,
           anchor:'center', align:'center',
-          color:'#0a1628', font:{ size:9, weight:'bold' },
-          formatter: v => v+'%',
+          color:'#fff', font:{ size:9, weight:'bold' },
+          formatter: v => v.toFixed(1)+'%',
         },
       },
       scales: {
-        x: { stacked:true, grid:{display:false}, ticks:{ color:'#8899b4', font:{size:10} } },
+        x: { stacked:true, grid:{display:false}, ticks:{ color:'#555', font:{size:10} } },
         y: { stacked:true, min:0, max:100,
-             ticks:{ callback:v=>v+'%', color:'#8899b4', font:{size:10} },
+             ticks:{ callback:v=>v+'%', color:'#555', font:{size:10} },
              grid:{ display:false } },
       },
     },
