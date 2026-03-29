@@ -253,6 +253,68 @@ const TOTAL_GRUPO1 = {
   '202602':20976,
   '202603':15982,
 };
+const TOTAL_GRUPO2 = {
+  '202503':3,
+  '202504':7,
+  '202505':6180,
+  '202506':81730,
+  '202507':193505,
+  '202508':221905,
+  '202509':295382,
+  '202510':227158,
+  '202511':350875,
+  '202512':366068,
+  '202601':175904,
+  '202602':82266,
+  '202603':68294,
+};
+
+// ── GRUPO 2 — TOTAIS MENSAIS ──────────────────────────────────
+const MONTHLY_G2 = [
+  {mes:'Mar/25', completo:true, ren:0, rei:0, ent:0, dm:0, tel:3},
+  {mes:'Abr/25', completo:true, ren:0, rei:0, ent:0, dm:0, tel:7},
+  {mes:'Mai/25', completo:true, ren:155, rei:173, ent:117, dm:0, tel:6180},
+  {mes:'Jun/25', completo:true, ren:2922, rei:1860, ent:2165, dm:0, tel:81730},
+  {mes:'Jul/25', completo:true, ren:7731, rei:3842, ent:5729, dm:0, tel:193505},
+  {mes:'Ago/25', completo:true, ren:7862, rei:4903, ent:5721, dm:0, tel:221905},
+  {mes:'Set/25', completo:true, ren:7566, rei:6757, ent:5760, dm:0, tel:295382},
+  {mes:'Out/25', completo:true, ren:7576, rei:3571, ent:5753, dm:0, tel:227158},
+  {mes:'Nov/25', completo:true, ren:12896, rei:6622, ent:9660, dm:0, tel:350875},
+  {mes:'Dez/25', completo:true, ren:14422, rei:7584, ent:10536, dm:0, tel:366068},
+  {mes:'Jan/26', completo:true, ren:7602, rei:3555, ent:5024, dm:0, tel:175904},
+  {mes:'Fev/26', completo:true, ren:3686, rei:1504, ent:2401, dm:0, tel:82266},
+  {mes:'Mar/26*', completo:false, ren:1980, rei:0, ent:579, dm:0, tel:68294},
+];
+
+// ── BREAKDOWN POR PRODUTO (G1) ────────────────────────────────
+const MONTHLY_HIBRIDO  = [
+  {mes:'Abr/25', completo:true, ren:14, rei:1},
+  {mes:'Mai/25', completo:true, ren:901, rei:44},
+  {mes:'Jun/25', completo:true, ren:13864, rei:736},
+  {mes:'Jul/25', completo:true, ren:25517, rei:1125},
+  {mes:'Ago/25', completo:true, ren:25201, rei:1236},
+  {mes:'Set/25', completo:true, ren:30191, rei:1612},
+  {mes:'Out/25', completo:true, ren:26279, rei:1123},
+  {mes:'Nov/25', completo:true, ren:39814, rei:1756},
+  {mes:'Dez/25', completo:true, ren:48251, rei:3095},
+  {mes:'Jan/26', completo:true, ren:24016, rei:1637},
+  {mes:'Fev/26', completo:true, ren:12780, rei:1139},
+  {mes:'Mar/26*', completo:false, ren:8974, rei:0},
+];
+const MONTHLY_DEBITO   = [
+  {mes:'Abr/25', completo:true, ren:0, rei:0},
+  {mes:'Mai/25', completo:true, ren:174, rei:25},
+  {mes:'Jun/25', completo:true, ren:2105, rei:268},
+  {mes:'Jul/25', completo:true, ren:3985, rei:462},
+  {mes:'Ago/25', completo:true, ren:4203, rei:577},
+  {mes:'Set/25', completo:true, ren:5083, rei:651},
+  {mes:'Out/25', completo:true, ren:4551, rei:646},
+  {mes:'Nov/25', completo:true, ren:6442, rei:940},
+  {mes:'Dez/25', completo:true, ren:6724, rei:997},
+  {mes:'Jan/26', completo:true, ren:3358, rei:467},
+  {mes:'Fev/26', completo:true, ren:1341, rei:259},
+  {mes:'Mar/26*', completo:false, ren:830, rei:0},
+];
 
 // ── DIMENSÕES DOS FILTROS ─────────────────────────────────────
 const PRODS  = ['HIBRIDO', 'PURO DEBITO'];

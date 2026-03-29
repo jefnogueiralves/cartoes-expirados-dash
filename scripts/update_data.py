@@ -65,6 +65,7 @@ SELECT
   SUM(QTDE_RENOVADOS + QTDE_REEMITIDOS) AS tel_ren,
 FROM `{CUBO_TABLE}`
 WHERE FLAG_GRUPO = 'GRUPO1'
+  AND EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
 GROUP BY 1
 ORDER BY 1
 """
@@ -75,8 +76,47 @@ SELECT
   COUNT(DISTINCT CUS_CUST_ID) AS qtde
 FROM `{ANL_TABLE}`
 WHERE FLAG_GRUPO = 'GRUPO1'
+  AND EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
 GROUP BY 1
 ORDER BY 1
+"""
+
+Q_MONTHLY_G2 = f"""
+SELECT
+  REPLACE(EXPIRATION_DATE, '-', '') AS safra,
+  SUM(QTDE_RENOVADOS)    AS ren,
+  SUM(QTDE_REEMITIDOS)   AS rei,
+  SUM(QTDE_DESBLOQUEADO) AS ent,
+  SUM(QTDE_RENOVADOS + QTDE_REEMITIDOS) AS tel_ren,
+FROM `{CUBO_TABLE}`
+WHERE FLAG_GRUPO = 'GRUPO2'
+  AND EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
+GROUP BY 1
+ORDER BY 1
+"""
+
+Q_TOTAL_GRUPO2 = f"""
+SELECT
+  REPLACE(EXPIRATION_DATE, '-', '') AS safra,
+  COUNT(DISTINCT CUS_CUST_ID) AS qtde
+FROM `{ANL_TABLE}`
+WHERE FLAG_GRUPO = 'GRUPO2'
+  AND EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
+GROUP BY 1
+ORDER BY 1
+"""
+
+Q_MONTHLY_PROD = f"""
+SELECT
+  REPLACE(EXPIRATION_DATE, '-', '') AS safra,
+  FLAG_PROD AS prod,
+  SUM(QTDE_RENOVADOS)    AS ren,
+  SUM(QTDE_REEMITIDOS)   AS rei,
+FROM `{CUBO_TABLE}`
+WHERE FLAG_GRUPO = 'GRUPO1'
+  AND EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
+GROUP BY 1, 2
+ORDER BY 1, 2
 """
 
 Q_TOTAL_EXPIRADO = f"""
@@ -84,6 +124,7 @@ SELECT
   REPLACE(EXPIRATION_DATE, '-', '') AS safra,
   COUNT(DISTINCT CUS_CUST_ID) AS qtde
 FROM `{ANL_TABLE}`
+WHERE EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
 GROUP BY 1
 ORDER BY 1
 """
@@ -96,6 +137,7 @@ SELECT
 FROM `{CUBO_TABLE}`
 WHERE FLAG_GRUPO = 'GRUPO1'
   AND FLAG_CICLO_USO_TD IS NOT NULL
+  AND EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
 GROUP BY 1, 2
 ORDER BY 1, 2
 """
@@ -111,6 +153,7 @@ SELECT
   SUM(TPV_TD_POS)                       AS tpv_td,
 FROM `{CUBO_TABLE}`
 WHERE FLAG_GRUPO = 'GRUPO1'
+  AND EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
 GROUP BY 1
 ORDER BY 1
 """
@@ -123,6 +166,7 @@ SELECT
 FROM `{CUBO_TABLE}`
 WHERE FLAG_GRUPO = 'GRUPO1'
   AND DIAS_ENTREGA IS NOT NULL
+  AND EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
 GROUP BY 1, 2
 ORDER BY 1, 2
 """
@@ -137,6 +181,7 @@ SELECT
 FROM `{CUBO_TABLE}`
 WHERE FLAG_GRUPO = 'GRUPO1'
   AND FLAG_CICLO_USO_TD IS NOT NULL
+  AND EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
 GROUP BY 1, 2, 3
 ORDER BY 1, 2, 3
 """
@@ -154,6 +199,7 @@ FROM `{ANL_TABLE}` cf
 INNER JOIN `meli-bi-data.WHOWNER.LK_MP_CARDS_TRACKING` t
   ON cf.CUS_CUST_ID = t.CUS_CUST_ID
 WHERE cf.FLAG_GRUPO = 'GRUPO1'
+  AND cf.EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
   AND t.DELIVERED_DATE IS NOT NULL
   AND t.SIT_SITE_ID   = 'MLB'
   AND t.DBT_CARD_REQ_ACQUISITON_FLOW = 'renewal'
@@ -170,6 +216,7 @@ SELECT
   SUM(TPV_TD_PRE)  AS tpv_td_antes,
 FROM `{CUBO_TABLE}`
 WHERE FLAG_GRUPO = 'GRUPO1'
+  AND EXPIRATION_DATE <= FORMAT_DATE('%Y-%m', CURRENT_DATE())
 GROUP BY 1
 ORDER BY 1
 """
@@ -245,6 +292,9 @@ def main():
     rows_dias       = run(Q_DIAS_ENTREGA)
     rows_dias_v2    = run(Q_DIAS_V2)
     rows_entrega_ciclo = run(Q_ENTREGA_CICLO)
+    rows_monthly_g2 = run(Q_MONTHLY_G2)
+    rows_tg2        = run(Q_TOTAL_GRUPO2)
+    rows_monthly_prod = run(Q_MONTHLY_PROD)
 
     print(f'  MONTHLY: {len(rows_monthly)} safras')
     print(f'  TOTAL_GRUPO1: {len(rows_tg1)} safras')
@@ -254,9 +304,14 @@ def main():
     print(f'  DIAS_ENTREGA: {len(rows_dias)} linhas')
     print(f'  DIAS_ENTREGA_V2: {len(rows_dias_v2)} linhas')
     print(f'  ENTREGA_CICLO: {len(rows_entrega_ciclo)} linhas')
+    print(f'  MONTHLY_G2: {len(rows_monthly_g2)} safras')
+    print(f'  MONTHLY_PROD: {len(rows_monthly_prod)} linhas')
 
     # ── TOTAL_GRUPO1 dict ──────────────────────────────────────
     total_g1 = {r['safra']: int(r['qtde']) for r in rows_tg1}
+
+    # ── TOTAL_GRUPO2 dict ──────────────────────────────────────
+    total_g2 = {r['safra']: int(r['qtde']) for r in rows_tg2}
 
     # ── TOTAL_EXPIRADO dict ────────────────────────────────────
     total_exp = {r['safra']: int(r['qtde']) for r in rows_texp}
@@ -404,12 +459,65 @@ def main():
         pairs = [f"  '{k}':{v}" for k, v in sorted(d.items())]
         return '{\n' + ',\n'.join(pairs) + ',\n}'
 
+    # ── MONTHLY_G2 list ────────────────────────────────────────
+    monthly_g2 = []
+    g2_safras  = {r['safra'] for r in rows_monthly_g2}
+    all_safras = sorted({r['safra'] for r in rows_monthly} | g2_safras)
+    g2_by_safra = {r['safra']: r for r in rows_monthly_g2}
+    for safra in sorted(g2_by_safra.keys()):
+        r       = g2_by_safra[safra]
+        parcial = (safra == cur_safra)
+        label   = safra_to_label(safra, parcial)
+        monthly_g2.append({
+            'mes':      label,
+            'completo': not parcial,
+            'ren':      int(r['ren'] or 0),
+            'rei':      int(r['rei'] or 0),
+            'ent':      int(r['ent'] or 0),
+            'dm':       0,
+            'tel':      total_g2.get(safra, 0),
+        })
+
+    # ── MONTHLY_PROD: G1 breakdown por FLAG_PROD ───────────────
+    PROD_MAP = {'01. CREDITO': 'HIBRIDO', '02. DEBITO': 'PURO DEBITO'}
+    prod_by_safra = {}
+    for r in rows_monthly_prod:
+        safra = r['safra']
+        prod  = PROD_MAP.get(str(r['prod'] or ''), str(r['prod'] or ''))
+        if safra not in prod_by_safra:
+            prod_by_safra[safra] = {}
+        prod_by_safra[safra][prod] = {
+            'ren': int(r['ren'] or 0),
+            'rei': int(r['rei'] or 0),
+        }
+
+    def js_monthly_prod(by_safra, all_labels_monthly):
+        """Gera MONTHLY_HIBRIDO e MONTHLY_DEBITO alinhados com MONTHLY."""
+        result_h, result_d = [], []
+        for mo in all_labels_monthly:
+            safra = '20' + mo['mes'].replace('*','').strip()
+            # converter label "Mai/25" -> "202505"
+            mm = {'Jan':'01','Fev':'02','Mar':'03','Abr':'04','Mai':'05','Jun':'06',
+                  'Jul':'07','Ago':'08','Set':'09','Out':'10','Nov':'11','Dez':'12'}
+            parts = mo['mes'].replace('*','').split('/')
+            safra = '20' + parts[1] + mm.get(parts[0],'00')
+            sd = by_safra.get(safra, {})
+            h  = sd.get('HIBRIDO',    {'ren':0,'rei':0})
+            d  = sd.get('PURO DEBITO',{'ren':0,'rei':0})
+            result_h.append({'mes':mo['mes'],'completo':mo['completo'],'ren':h['ren'],'rei':h['rei']})
+            result_d.append({'mes':mo['mes'],'completo':mo['completo'],'ren':d['ren'],'rei':d['rei']})
+        return js_arr(result_h), js_arr(result_d)
+
+    monthly_hibrido_js, monthly_debito_js = js_monthly_prod(prod_by_safra, monthly)
+
     monthly_js       = js_arr(monthly)
+    monthly_g2_js    = js_arr(monthly_g2)
     ciclo_safra_js   = js_arr(ciclo_safra)
     funil_js         = js_arr(funil_data)
     spending_js      = js_arr(spending_antes)
     total_exp_js     = js_dict(total_exp)
     total_g1_js      = js_dict(total_g1)
+    total_g2_js      = js_dict(total_g2)
 
     output = f"""// ═══════════════════════════════════════════════════════════════
 //  dashboard_data.js — gerado automaticamente por update_data.py
@@ -451,12 +559,19 @@ const DIAS_ENTREGA_DIST = {dias_dist_js};
 const DIAS_ENTREGA_V2 = {dias_v2_js};
 
 // ── ENTREGA POR CICLO DE USO ───────────────────────────────────
-// { 'YYYYMM': { 'ciclo': { total, entregue, faixas:{...} } } }
 const ENTREGA_CICLO = {entrega_ciclo_js};
 
 // ── TOTAIS BQ — UNIVERSO COMPLETO ─────────────────────────────
 const TOTAL_EXPIRADO = {total_exp_js};
 const TOTAL_GRUPO1 = {total_g1_js};
+const TOTAL_GRUPO2 = {total_g2_js};
+
+// ── GRUPO 2 — TOTAIS MENSAIS ──────────────────────────────────
+const MONTHLY_G2 = {monthly_g2_js};
+
+// ── BREAKDOWN POR PRODUTO (G1) ────────────────────────────────
+const MONTHLY_HIBRIDO  = {monthly_hibrido_js};
+const MONTHLY_DEBITO   = {monthly_debito_js};
 
 // ── DIMENSÕES DOS FILTROS ─────────────────────────────────────
 const PRODS  = ['HIBRIDO', 'PURO DEBITO'];

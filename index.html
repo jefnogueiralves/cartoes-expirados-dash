@@ -1706,6 +1706,23 @@ function mesToSafraYYYYMM(mes) {
   return yy + String(mo).padStart(2,'0');
 }
 
+// ── Helpers G2 e produto ──────────────────────────────────────
+function getG2Renovados(months) {
+  return months.map(mes => {
+    const r = (typeof MONTHLY_G2 !== 'undefined' ? MONTHLY_G2 : []).find(m => m.mes === mes);
+    return r ? (r.ren + r.rei) : 0;
+  });
+}
+function getProdRen(months, prodArr) {
+  const src = prodArr === 'HIBRIDO'
+    ? (typeof MONTHLY_HIBRIDO !== 'undefined' ? MONTHLY_HIBRIDO : [])
+    : (typeof MONTHLY_DEBITO  !== 'undefined' ? MONTHLY_DEBITO  : []);
+  return months.map(mes => {
+    const r = src.find(m => m.mes === mes);
+    return r ? (r.ren + r.rei) : 0;
+  });
+}
+
 function getD() {
   const filtered = RAW_DATA.filter(r =>
     state.safras.has(r.mes) &&
@@ -1807,20 +1824,21 @@ function initCharts() {
   const D = getD();
   Chart.register(ChartDataLabels);
 
-  // chartMain
+  // chartMain — G1 (amarelo) + G2 (cinza) empilhados
   charts.main = new Chart(document.getElementById('chartMain'), {
     type:'bar',
     data:{
       labels: D.meses,
       datasets:[
-        {label:'Renovados', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:C.yellow, borderRadius:4},
+        {label:'Grupo 1', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:C.yellow, borderRadius:4, stack:'s'},
+        {label:'Grupo 2', data:getG2Renovados(D.meses), backgroundColor:'#94a3b8', borderRadius:4, stack:'s'},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
       scales:{
-        x:{grid:{display:false}, ticks:{font:{size:10}}},
-        y:{beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}},
+        x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
+        y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}},
       }
     }
   });
@@ -1841,13 +1859,14 @@ function initCharts() {
     }
   });
 
-  // chartCombo
+  // chartCombo — Híbrido (ouro) + Puro Débito (azul) + Dias Médios
   charts.combo = new Chart(document.getElementById('chartCombo'), {
     type:'bar',
     data:{
       labels:D.meses,
       datasets:[
-        {label:'Renovados', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:C.yellowA, borderColor:C.yellow, borderWidth:1.5, borderRadius:3, yAxisID:'y'},
+        {label:'Híbrido',     data:getProdRen(D.meses,'HIBRIDO'),    backgroundColor:'rgba(250,204,21,.85)', borderColor:'#facc15', borderWidth:1, borderRadius:3, stack:'p', yAxisID:'y'},
+        {label:'Puro Débito', data:getProdRen(D.meses,'PURO DEBITO'),backgroundColor:'rgba(56,189,248,.85)', borderColor:'#38bdf8', borderWidth:1, borderRadius:3, stack:'p', yAxisID:'y'},
         {label:'Dias Médios', type:'line', data:D.diasMedios, borderColor:C.orange, borderWidth:1.5,
           pointRadius:2, pointBackgroundColor:'#fff', pointBorderColor:C.orange, fill:false, tension:.4, yAxisID:'y2'},
       ]
@@ -1855,27 +1874,28 @@ function initCharts() {
     options:{responsive:true, maintainAspectRatio:false,
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
       scales:{
-        x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}, position:'left'},
+        x:{stacked:true, grid:{display:false},ticks:{font:{size:10}}},
+        y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}, position:'left'},
         y2:{beginAtZero:false, ticks:{callback:v=>v+'d',font:{size:10}}, position:'right', grid:{display:false}},
       }
     }
   });
 
-  // chartMainTab — copia do chartMain para a aba unificada
+  // chartMainTab — G1 + G2 (aba Renovações)
   charts.mainTab = new Chart(document.getElementById('chartMainTab'), {
     type:'bar',
     data:{
       labels: D.meses,
       datasets:[
-        {label:'Renovados', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:C.yellow, borderRadius:4},
+        {label:'Grupo 1', data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:C.yellow, borderRadius:4, stack:'s'},
+        {label:'Grupo 2', data:getG2Renovados(D.meses), backgroundColor:'#94a3b8', borderRadius:4, stack:'s'},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
       plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},datalabels:{display:false}},
       scales:{
-        x:{grid:{display:false}, ticks:{font:{size:10}}},
-        y:{beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}},
+        x:{stacked:true, grid:{display:false}, ticks:{font:{size:10}}},
+        y:{stacked:true, beginAtZero:true, ticks:{callback:v=>fmt(v),font:{size:10}}, grid:{display:false}},
       }
     }
   });
@@ -2275,15 +2295,20 @@ function buildCicloSafraTable() {
     const totalRnv = mo.ren + mo.rei;
     totAll   += totalRnv;
     totTelG1 += g1;
+    // Mapa ciclo-key → chave ENTREGA_CICLO para obter elegíveis reais por ciclo
+    const EC_KEY = {c1:'01. 1 A 30 D',c2:'02. 31 A 60 D',c3:'03. 61 A 90 D',
+                    c4:'04. 91 A 120 D',c5:'05. 121 A 180 D',c6:'06. ACIMA DE 180 D',c7:'07. NAO ATIVO'};
+    const safraEC = (ENTREGA_CICLO && ENTREGA_CICLO[safra]) || {};
+
     const cicloData = {};
     if (ciclo) {
       CICLOS_DEF.forEach(cd => {
-        const val        = ciclo[cd.k] || 0;
-        const renovCiclo = totalRnv * cd.wRen;
+        const renovCiclo = ciclo[cd.k] || 0;           // renovações reais por ciclo (CICLO_SAFRA)
         const pctConv    = totalRnv > 0 ? (renovCiclo / totalRnv * 100) : 0;
-        const share      = g1 > 0 ? (val / g1 * 100) : 0;
-        cicloData[cd.k]  = { val, renovCiclo, pctConv, share };
-        totValByCiclo[cd.k] += val;
+        const eligible   = (safraEC[EC_KEY[cd.k]] || {}).total || 0; // elegíveis reais (ENTREGA_CICLO)
+        const share      = g1 > 0 ? (eligible / g1 * 100) : 0;
+        cicloData[cd.k]  = { renovCiclo, pctConv, share };
+        totValByCiclo[cd.k] += eligible;
         totRenByCiclo[cd.k] += renovCiclo;
       });
     }
@@ -2300,7 +2325,7 @@ function buildCicloSafraTable() {
     let cicloHtml = '';
     if (ciclo) {
       CICLOS_DEF.forEach((cd, i) => {
-        const { val, pctConv, share } = cicloData[cd.k] || { val:0, pctConv:0, share:0 };
+        const { pctConv, share } = cicloData[cd.k] || { pctConv:0, share:0 };
         const alpha   = Math.min(0.25, Math.max(0.04, share / 40));
         const bg      = `rgba(${cd.rgb},${alpha.toFixed(2)})`;
         const bl      = (i===5) ? 'border-left:2px solid #fca5a5;' : (i===0 ? 'border-left:2px solid #86efac;' : '');
@@ -2869,7 +2894,8 @@ function updateCharts() {
   // chartMain
   if(charts.main) {
     charts.main.data.labels = D.meses;
-    upDs(charts.main, 'Renovados', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
+    upDs(charts.main, 'Grupo 1', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
+    upDs(charts.main, 'Grupo 2', getG2Renovados(D.meses));
     charts.main.update();
   }
 
@@ -2882,7 +2908,8 @@ function updateCharts() {
   // chartCombo
   if(charts.combo) {
     charts.combo.data.labels = D.meses;
-    upDs(charts.combo, 'Renovados', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
+    upDs(charts.combo, 'Híbrido',     getProdRen(D.meses,'HIBRIDO'));
+    upDs(charts.combo, 'Puro Débito', getProdRen(D.meses,'PURO DEBITO'));
     upDs(charts.combo, 'Dias Médios', D.diasMedios);
     charts.combo.update();
   }
@@ -2890,7 +2917,8 @@ function updateCharts() {
   // chartMainTab
   if(charts.mainTab) {
     charts.mainTab.data.labels = D.meses;
-    upDs(charts.mainTab, 'Renovados', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
+    upDs(charts.mainTab, 'Grupo 1', D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]));
+    upDs(charts.mainTab, 'Grupo 2', getG2Renovados(D.meses));
     charts.mainTab.update();
   }
 
