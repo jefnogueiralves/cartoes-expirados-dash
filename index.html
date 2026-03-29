@@ -1608,6 +1608,30 @@ const state = {
   grupo: 'GRUPO1',
 };
 
+// ── GRUPO HELPERS ─────────────────────────────────────────────
+function getMonthlyByGrupo(grupo) {
+  // Apenas GRUPO1 tem dados mensais reais; GRUPO2 usa o mesmo MONTHLY
+  return MONTHLY;
+}
+function rebuildRawData(monthly) {
+  RAW_DATA.length = 0;
+  monthly.forEach(m => {
+    PRODS.forEach(prod => {
+      const pW = P_W[prod];
+      CICLOS.forEach(ciclo => {
+        RAW_DATA.push({
+          mes: m.mes, prod, ciclo,
+          ren: Math.round(m.ren * pW * C_REN[ciclo]),
+          rei: Math.round(m.rei * pW * C_REI[ciclo]),
+          tel: Math.round(m.tel * pW / CICLOS.length),
+          ent: Math.round(m.ent * pW / CICLOS.length),
+          dm: m.dm, completo: m.completo,
+        });
+      });
+    });
+  });
+}
+
 // ── HELPERS ───────────────────────────────────────────────────
 // Peso acumulado dos produtos selecionados (0-1), usado para escalar FUNIL_DATA
 function getProdWeight() {
