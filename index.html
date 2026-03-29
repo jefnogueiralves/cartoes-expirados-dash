@@ -3675,7 +3675,7 @@ function buildFunilVisual() {
   const _fdSel = FUNIL_DATA.filter(d=>safrasMMSet.has(d.safra));
   const totalEnt  = _fdSel.reduce((a,d)=>a+getFunilEntregue(d.safra,d),0);
   const totalDesb = _fdSel.reduce((a,d)=>a+(d.ativados||0),0);
-  const totalAtiv = _fdSel.reduce((a,d)=>a+(d.ativos_tc||0)+(d.ativos_td||0),0);
+  const totalAtiv = _fdSel.reduce((a,d)=>a+getFunilAtivos(d),0);
   const safrasSel = [...state.safras];
   const elSub = document.getElementById('fn-total-sub');
   if(elSub) elSub.textContent = safrasSel.length === MONTHLY.length
@@ -3698,7 +3698,7 @@ function buildFunilVisual() {
     const sol   = mo.ren + mo.rei;
     const ent   = getFunilEntregue(safra, fd);
     const desb  = fd ? (fd.ativados||0) : 0;
-    const ativ  = fd ? ((fd.ativos_tc||0)+(fd.ativos_td||0)) : 0;
+    const ativ  = getFunilAtivos(fd);
     const titleEl = document.getElementById('fn-'+key+'-title');
     if(titleEl) titleEl.textContent = mo.mes;
     renderFunil('funil-'+key, getFunilStages(tel, sol, ent, desb, ativ));
