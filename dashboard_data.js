@@ -1,12 +1,12 @@
 // ═══════════════════════════════════════════════════════════════
 //  dashboard_data.js — gerado automaticamente por update_data.py
-//  Última atualização: 28/03/2026
+//  Última atualização: 29/03/2026
 //  Fonte: meli-bi-data.SBOX_CREDITSTC.CARTAO_EXPIRADO_ANL_IA
 //         meli-bi-data.SBOX_CREDITSTC.CARTAO_EXPIRADO_CUBO_IA
 // ═══════════════════════════════════════════════════════════════
 
 // ── DATA DA ÚLTIMA ATUALIZAÇÃO ────────────────────────────────
-const DT_ATUALIZACAO = '28/03/2026';
+const DT_ATUALIZACAO = '29/03/2026';
 
 // ── TOTAIS MENSAIS REAIS (BigQuery) ───────────────────────────
 const MONTHLY = [
