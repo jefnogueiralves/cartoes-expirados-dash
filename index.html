@@ -123,11 +123,45 @@
       top: 0; left: 0; right: 0;
       height: 4px;
     }
-    .kpi-card.yellow::before { background: var(--yellow); }
-    .kpi-card.blue::before   { background: var(--blue); }
-    .kpi-card.green::before  { background: var(--green); }
-    .kpi-card.orange::before { background: var(--orange); }
-    .kpi-card.red::before    { background: var(--red); }
+    .kpi-card.yellow::before  { background: var(--yellow); }
+    .kpi-card.blue::before    { background: var(--blue); }
+    .kpi-card.green::before   { background: var(--green); }
+    .kpi-card.orange::before  { background: var(--orange); }
+    .kpi-card.red::before     { background: var(--red); }
+    .kpi-card.purple::before  { background: #7C3AED; }
+
+    /* ── INSIGHTS SECTION DIVIDER ── */
+    .insights-section-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      padding: 10px 0 10px;
+      margin-top: 28px;
+      border-bottom: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: -.2px;
+    }
+    .insights-section-title .badge {
+      background: var(--yellow);
+      color: #1A1A1A;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    /* horizontal progress bar */
+    .hbar-wrap { background: #f0f0f0; border-radius: 4px; height: 14px; flex: 1; overflow: hidden; }
+    .hbar-fill { height: 14px; border-radius: 4px; display: flex; align-items: center; padding-left: 5px; min-width: 2px; transition: width .3s; }
+    .hbar-fill span { font-size: 9px; font-weight: 800; white-space: nowrap; }
+    /* step bar for funnel conversion */
+    .step-bar-wrap { background: #f0f0f0; border-radius: 4px; height: 7px; margin-top: 4px; overflow: hidden; }
+    .step-bar-fill { height: 7px; border-radius: 4px; }
+    /* spending delta pill */
+    .delta-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .delta-pill.up   { background: #e8f7ef; color: var(--green); }
+    .delta-pill.down { background: #fff0ee; color: var(--red); }
 
     .kpi-label {
       font-size: 9.5px;
@@ -1445,57 +1479,35 @@
        TAB: INSIGHTS
   ══════════════════════════════════��════════════════════════ -->
   <div id="tab-insights" class="tab-panel">
+
+    <!-- ══ SECTION 1: RESUMO DA VISÃO GERAL ══ -->
     <div class="section-title">
-      Principais Insights
-      <span class="badge">Análise</span>
+      Resumo da Visão Geral
+      <span class="badge">Acumulado</span>
     </div>
+    <div id="insights-resumo-kpis" class="kpi-grid" style="grid-template-columns:repeat(5,1fr)"></div>
+    <div class="insights-grid" id="insights-resumo-cards" style="grid-template-columns:repeat(3,1fr);margin-top:16px"></div>
 
-    <div class="insights-grid">
-      <div class="insight-card good">
-        <div class="insight-icon">📈</div>
-        <div>
-          <div class="insight-title">Crescimento explosivo: 56x em 7 meses</div>
-          <div class="insight-text">Renovações saltaram de <strong>1.230 (Mai/25)</strong> para <strong>69.397 (Dez/25)</strong> — crescimento de 56x. O pico de Dez/25 coincide com o maior volume de elegíveis (443K cartões), confirmando que o processo acompanhou a demanda sazonal.</div>
-        </div>
-      </div>
-      <div class="insight-card good">
-        <div class="insight-icon">⏱️</div>
-        <div>
-          <div class="insight-title">SLA de entrega melhorou 47% desde Jul/25</div>
-          <div class="insight-text">Prazo médio caiu de <strong>7,5 dias (Jul/25)</strong> para <strong>4,0 dias (Out/25+)</strong>. A virada aconteceu em Ago/25: faixa "Até 5 dias" passou a dominar (~44% dos envios), sinalizando melhoria operacional significativa na logística.</div>
-        </div>
-      </div>
-      <div class="insight-card alert">
-        <div class="insight-icon">⚠️</div>
-        <div>
-          <div class="insight-title">Reemissões: ~15% do total processado</div>
-          <div class="insight-text">Set/25 registrou o maior volume absoluto de reemissões (<strong>9.020</strong>), representando 17,4% do total processado naquele mês. Em Dez/25 o percentual caiu para 14,4% — tendência de melhora mas ainda com oportunidade de redução.</div>
-        </div>
-      </div>
-      <div class="insight-card info">
-        <div class="insight-icon">🎯</div>
-        <div>
-          <div class="insight-title">Sazonalidade concentrada em Q4 2025</div>
-          <div class="insight-text">Nov/25 e Dez/25 juntos somaram <strong>128.549 renovações</strong> (35% do total do período). #s de elegíveis em Nov/25 (416K) e Dez/25 (444K) foram os maiores da série. Planejar capacidade logística com antecedência para Q4 2026.</div>
-        </div>
-      </div>
-      <div class="insight-card warn">
-        <div class="insight-icon">🔄</div>
-        <div>
-          <div class="insight-title">Mar/26 ainda em processamento (safra parcial)</div>
-          <div class="insight-text">Com vencimento no último dia de março, a safra Mar/26 ainda está em andamento: <strong>11.785 renovações e 0 reemissões</strong> registradas até 27/03. O volume final de reemissões será contabilizado após o dia 31/03/2026.</div>
-        </div>
-      </div>
-      <div class="insight-card info">
-        <div class="insight-icon">📊</div>
-        <div>
-          <div class="insight-title">Taxa de conversão sobre elegíveis: ~18% em média</div>
-          <div class="insight-text">A relação (renovações + reemissões) / total elegível fica entre 15–20% nos meses maduros. Ex: Dez/25 = 81.073 processados / 443.767 elegíveis = <strong>18,3%</strong>. Grande parcela do universo elegível ainda não interage com o fluxo de renovação.</div>
-        </div>
-      </div>
+    <!-- ══ SECTION 2: SAFRA DO MÊS ANTERIOR ══ -->
+    <div class="insights-section-title" style="margin-top:32px">
+      Safra do Mês Anterior — Visão de Até 90 Dias
+      <span class="badge" id="insights-ult-badge">—</span>
     </div>
+    <div id="insights-ult-content" style="margin-top:16px"></div>
 
-    <div class="chart-row two" style="margin-top:24px">
+    <!-- ══ SECTION 3: SAFRA ANTERIOR — ENGAJAMENTO DE CICLO ══ -->
+    <div class="insights-section-title" style="margin-top:32px">
+      Safra Anterior — Engajamento por Ciclo (90 Dias)
+      <span class="badge" id="insights-pen-badge">—</span>
+    </div>
+    <div id="insights-pen-content" style="margin-top:16px"></div>
+
+    <!-- ══ GRÁFICOS DE TENDÊNCIA ══ -->
+    <div class="insights-section-title" style="margin-top:32px">
+      Tendência Histórica
+      <span class="badge">Série Completa</span>
+    </div>
+    <div class="chart-row two" style="margin-top:16px">
       <div class="chart-card">
         <h3>Renovações vs Reemissões — Tendência</h3>
         <div class="chart-sub">Convergência desejada: mais renovações, menos reemissões</div>
@@ -1566,18 +1578,10 @@
         </div>
       </div>
 
-      <div class="slide-insights-row">
+      <div class="slide-insights-row" id="slide-insights-dynamic">
         <div class="slide-insight">
-          <strong>Crescimento 56x em 7 meses</strong>
-          De 1.230 renovações (Mai/25) para 69.397 (Dez/25). Pico acompanhou o maior volume de elegíveis da série (444K cartões em Dez/25).
-        </div>
-        <div class="slide-insight">
-          <strong>SLA melhorou 47%</strong>
-          Prazo médio caiu de 7,5d (Jul/25) para 4,0d (Out/25+). Virada operacional em Ago/25 — faixa "até 5 dias" tornou-se dominante.
-        </div>
-        <div class="slide-insight">
-          <strong>Reemissões: ~15% do mix</strong>
-          Set/25 maior volume absoluto (9.020). Em Dez/25 caiu para 14,4%. Oportunidade de redução via engajamento na janela de 90 dias.
+          <strong>Carregando insights...</strong>
+          Aguardando dados do dashboard.
         </div>
       </div>
     </div>
@@ -3588,6 +3592,12 @@ function mesToSafra(mes) {
   return '20'+parts[1]+(mm[parts[0]]||'00');
 }
 
+// ── HELPER: safra YYYYMM → label "Mmm/AA" ─────────────────────
+function safraLbl(s) {
+  const _MP = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return _MP[parseInt(s.slice(4,6))-1] + '/' + s.slice(2,4);
+}
+
 // ── FUNIL VISUAL ──────────────────────────────────────────────
 // Retorna qtde ativados físicos pós-renovação (TC OU TD, sem dupla contagem).
 // Usa ativos_fisico (QTDE_ATIVO_FISICO do BQ) quando disponível após
@@ -3765,6 +3775,413 @@ function buildSumario() {
   </tr>`;
 }
 
+// ── INSIGHTS ──────────────────────────────────────────────────
+function buildInsights() {
+  const fmtN = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'K' : String(Math.round(n)||0);
+  const fmtBRL = n => {
+    const abs = Math.abs(n);
+    const s = abs >= 1e6 ? (abs/1e6).toFixed(1)+'M' : abs >= 1e3 ? (abs/1e3).toFixed(0)+'K' : Math.round(abs).toLocaleString('pt-BR');
+    return 'R$\u00a0' + s;
+  };
+  const pctN  = (a, b) => b ? +(a/b*100).toFixed(1) : 0;
+  const pctStr= (a, b) => b ? (a/b*100).toFixed(1)+'%' : '—';
+  const deltaStr = d => (d >= 0 ? '+' : '') + d.toFixed(1) + '%';
+  const deltaCls = d => d >= 0 ? 'up' : 'down';
+
+  // ── Safras completas (mais recentes primeiro) ─────────────────
+  const completasDesc = MONTHLY.filter(m => m.completo).slice().reverse();
+  if (completasDesc.length < 2) return;
+  const mUlt = completasDesc[0]; // última completa
+  const mPen = completasDesc[1]; // penúltima
+  const sfUlt = mesToSafra(mUlt.mes);
+  const sfPen = mesToSafra(mPen.mes);
+  const fdUlt = FUNIL_DATA.find(d => d.safra === sfUlt) || {};
+  const fdPen = FUNIL_DATA.find(d => d.safra === sfPen) || {};
+  const saUlt = SPENDING_ANTES.find(d => d.safra === sfUlt) || {};
+  const saPen = SPENDING_ANTES.find(d => d.safra === sfPen) || {};
+  const csPen = CICLO_SAFRA.find(c => c.safra === sfPen) || {};
+
+  // ── SECTION 1: Visão Geral ────────────────────────────────────
+  const totalBase  = FUNIL_DATA.reduce((a,d) => a + (d.base||0), 0);
+  const totalEnt   = FUNIL_DATA.reduce((a,d) => a + getFunilEntregue(d.safra,d), 0);
+  const totalDesb  = FUNIL_DATA.reduce((a,d) => a + (d.ativados||0), 0);
+  const totalAtiv  = FUNIL_DATA.reduce((a,d) => a + getFunilAtivos(d), 0);
+  const totalTpvTc = FUNIL_DATA.reduce((a,d) => a + (d.tpv_tc||0), 0);
+  const totalTpvTd = FUNIL_DATA.reduce((a,d) => a + (d.tpv_td||0), 0);
+  const totalTpv   = totalTpvTc + totalTpvTd;
+  const taxaAtivGeral = pctN(totalAtiv, totalBase);
+  const complArr   = MONTHLY.filter(m => m.completo && m.dm > 0);
+  const avgDm      = complArr.length ? (complArr.reduce((a,m) => a+m.dm,0)/complArr.length).toFixed(1) : '—';
+  const bestDm     = complArr.length ? complArr.reduce((best,m) => m.dm < best.dm ? m : best) : null;
+  // taxa de ativação — últimas 3 safras com base > 100
+  const last3 = FUNIL_DATA.filter(d => d.base > 100).slice(-3);
+  const trendPP = last3.length >= 2
+    ? pctN(getFunilAtivos(last3[last3.length-1]), last3[last3.length-1].base)
+      - pctN(getFunilAtivos(last3[0]), last3[0].base)
+    : 0;
+  const bestActivFd = [...FUNIL_DATA].filter(d=>d.base>100)
+    .sort((a,b) => pctN(getFunilAtivos(b),b.base) - pctN(getFunilAtivos(a),a.base))[0];
+
+  // Render KPI bar
+  const kpiEl = document.getElementById('insights-resumo-kpis');
+  if (kpiEl) kpiEl.innerHTML = `
+    <div class="kpi-card yellow">
+      <div class="kpi-label">Base Renovada</div>
+      <div class="kpi-value">${fmtN(totalBase)}</div>
+      <div class="kpi-sub">Renovados + Reemitidos</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Entregues</div>
+      <div class="kpi-value">${fmtN(totalEnt)}</div>
+      <div class="kpi-sub">${pctStr(totalEnt,totalBase)} da base</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Desbloqueados</div>
+      <div class="kpi-value" style="color:#7C3AED">${fmtN(totalDesb)}</div>
+      <div class="kpi-sub">${pctStr(totalDesb,totalEnt)} dos entregues</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Ativados TC|TD</div>
+      <div class="kpi-value">${fmtN(totalAtiv)}</div>
+      <div class="kpi-sub">${pctStr(totalAtiv,totalBase)} da base</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">TPV Total (90d)</div>
+      <div class="kpi-value" style="font-size:18px">${fmtBRL(totalTpv)}</div>
+      <div class="kpi-sub">TC + TD pós-renovação</div>
+    </div>
+  `;
+
+  // Render insight cards resumo
+  const cardsEl = document.getElementById('insights-resumo-cards');
+  if (cardsEl) cardsEl.innerHTML = `
+    <div class="insight-card ${taxaAtivGeral >= 60 ? 'good' : taxaAtivGeral >= 40 ? 'info' : 'warn'}">
+      <div class="insight-icon">🎯</div>
+      <div>
+        <div class="insight-title">Taxa de ativação geral: ${taxaAtivGeral.toFixed(1)}%</div>
+        <div class="insight-text">
+          De <strong>${fmtN(totalBase)}</strong> renovados, <strong>${fmtN(totalAtiv)}</strong> realizaram ao menos 1 transação física (TC ou TD) em até 90 dias após renovação.
+          ${taxaAtivGeral >= 60 ? 'Conversão acima de 60% — sinal positivo de engajamento pós-renovação.' :
+            taxaAtivGeral >= 40 ? 'Conversão entre 40–60% — oportunidade de melhoria no engajamento.' :
+            'Conversão abaixo de 40% — atenção ao engajamento na janela de 90 dias.'}
+          ${bestActivFd ? `<br>Melhor safra histórica: <strong>${safraLbl(bestActivFd.safra)}</strong> (${pctN(getFunilAtivos(bestActivFd),bestActivFd.base).toFixed(1)}%).` : ''}
+        </div>
+      </div>
+    </div>
+    <div class="insight-card info">
+      <div class="insight-icon">⏱️</div>
+      <div>
+        <div class="insight-title">SLA médio de entrega: ${avgDm} dias</div>
+        <div class="insight-text">
+          Média de dias entre solicitação e recebimento do cartão (safras completas).
+          ${bestDm ? `Menor prazo registrado: <strong>${bestDm.mes}</strong> com <strong>${bestDm.dm.toFixed(1)}d</strong>.` : ''}
+          ${parseFloat(avgDm) <= 5 ? '<br>SLA atual abaixo de 5 dias — resultado operacional excelente.' : '<br>Monitorar redução do prazo para meta de 5 dias.'}
+        </div>
+      </div>
+    </div>
+    <div class="insight-card ${trendPP >= 0 ? 'good' : 'warn'}">
+      <div class="insight-icon">${trendPP >= 0 ? '📈' : '📉'}</div>
+      <div>
+        <div class="insight-title">Tendência recente de ativação: ${trendPP >= 0 ? '+' : ''}${trendPP.toFixed(1)}pp</div>
+        <div class="insight-text">
+          Comparando as últimas 3 safras (${last3.map(d=>safraLbl(d.safra)).join(', ')}), a taxa de ativação
+          ${trendPP >= 0 ? `<strong>cresceu ${trendPP.toFixed(1)} pontos percentuais</strong> — tendência positiva.` :
+            `<strong>caiu ${Math.abs(trendPP).toFixed(1)} pontos percentuais</strong> — investigar causas de queda.`}
+          TPV total acumulado: <strong>${fmtBRL(totalTpv)}</strong>.
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ── SECTION 2: Última safra completa ─────────────────────────
+  const ultBadge = document.getElementById('insights-ult-badge');
+  if (ultBadge) ultBadge.textContent = mUlt.mes;
+
+  const baseUlt  = fdUlt.base  || (mUlt.ren + mUlt.rei) || 0;
+  const entUlt   = getFunilEntregue(sfUlt, fdUlt) || mUlt.ent || 0;
+  const desbUlt  = fdUlt.ativados || 0;
+  const ativUlt  = getFunilAtivos(fdUlt);
+  const tcUlt    = fdUlt.ativos_tc || 0;
+  const tdUlt    = fdUlt.ativos_td || 0;
+  const tpvTcUlt = fdUlt.tpv_tc || 0;
+  const tpvTdUlt = fdUlt.tpv_td || 0;
+  const tpvUlt   = tpvTcUlt + tpvTdUlt;
+  const tpvTcAnt = saUlt.tpv_tc_antes || 0;
+  const tpvTdAnt = saUlt.tpv_td_antes || 0;
+  const telUlt   = mUlt.tel || baseUlt;
+
+  const spendTcAfter  = tcUlt ? tpvTcUlt/tcUlt : 0;
+  const spendTcBefore = tcUlt ? tpvTcAnt/tcUlt : 0;
+  const spendTdAfter  = tdUlt ? tpvTdUlt/tdUlt : 0;
+  const spendTdBefore = tdUlt ? tpvTdAnt/tdUlt : 0;
+  const deltaTc = spendTcBefore ? (spendTcAfter - spendTcBefore)/spendTcBefore*100 : 0;
+  const deltaTd = spendTdBefore ? (spendTdAfter - spendTdBefore)/spendTdBefore*100 : 0;
+
+  const spendNote = d =>
+    d > 5  ? 'cresceu — forte reengajamento pós-renovação.' :
+    d > -15 ? 'manteve-se estável — usuários preservaram padrão de gastos.' :
+    d > -35 ? 'caiu moderadamente — possível período de adaptação ao cartão novo.' :
+    'caiu expressivamente — verificar se é limitação da janela de observação ou queda real.';
+
+  const taxaEntUlt  = pctN(entUlt,  baseUlt);
+  const taxaDesbUlt = pctN(desbUlt, entUlt);
+  const taxaActivUlt= pctN(ativUlt, desbUlt);
+  const taxaFinalUlt= pctN(ativUlt, baseUlt);
+
+  const funilSteps = [
+    {label:'Expirados → Renovados',       rate:pctN(baseUlt,telUlt), color:'#009EE3'},
+    {label:'Renovados → Entregues',        rate:taxaEntUlt,           color:'#00A650'},
+    {label:'Entregues → Desbloqueados',    rate:taxaDesbUlt,          color:'#7C3AED'},
+    {label:'Desbloqueados → Ativados',     rate:taxaActivUlt,         color:'#FF6B00'},
+  ];
+
+  const ultContent = document.getElementById('insights-ult-content');
+  if (ultContent) ultContent.innerHTML = `
+    <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
+      <div class="kpi-card yellow">
+        <div class="kpi-label">Base Renovada</div>
+        <div class="kpi-value">${fmtN(baseUlt)}</div>
+        <div class="kpi-sub">Renov. + Reem.</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Entregues</div>
+        <div class="kpi-value">${fmtN(entUlt)}</div>
+        <div class="kpi-sub">${pctStr(entUlt,baseUlt)} da base</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">Desbloqueados</div>
+        <div class="kpi-value" style="color:#7C3AED">${fmtN(desbUlt)}</div>
+        <div class="kpi-sub">${pctStr(desbUlt,entUlt)} dos entregues</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">Ativados TC|TD</div>
+        <div class="kpi-value">${fmtN(ativUlt)}</div>
+        <div class="kpi-sub">${pctStr(ativUlt,desbUlt)} dos desbl.</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">TPV Gerado (90d)</div>
+        <div class="kpi-value" style="font-size:18px">${fmtBRL(tpvUlt)}</div>
+        <div class="kpi-sub">${pctStr(ativUlt,baseUlt)} conversão final</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="chart-card">
+        <h3>Spending Médio por Ativo — Antes vs Depois</h3>
+        <div class="chart-sub">90 dias antes e 90 dias após DT_RENOVACAO</div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:10px">
+          <thead><tr style="background:#f5f5f5">
+            <th style="padding:8px 10px;text-align:left;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:2px solid var(--border)">Tipo</th>
+            <th style="padding:8px 10px;text-align:right;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:2px solid var(--border)">Antes (90d)</th>
+            <th style="padding:8px 10px;text-align:right;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:2px solid var(--border)">Depois (90d)</th>
+            <th style="padding:8px 10px;text-align:right;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:2px solid var(--border)">Variação</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;font-weight:600">TC (Crédito)</td>
+              <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;text-align:right">${fmtBRL(spendTcBefore)}/usr</td>
+              <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;text-align:right">${fmtBRL(spendTcAfter)}/usr</td>
+              <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;text-align:right"><span class="delta-pill ${deltaCls(deltaTc)}">${deltaStr(deltaTc)}</span></td>
+            </tr>
+            <tr>
+              <td style="padding:8px 10px;font-weight:600">TD (Débito)</td>
+              <td style="padding:8px 10px;text-align:right">${fmtBRL(spendTdBefore)}/usr</td>
+              <td style="padding:8px 10px;text-align:right">${fmtBRL(spendTdAfter)}/usr</td>
+              <td style="padding:8px 10px;text-align:right"><span class="delta-pill ${deltaCls(deltaTd)}">${deltaStr(deltaTd)}</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted)">
+          TC: ${fmtN(tcUlt)} ativos · TD: ${fmtN(tdUlt)} ativos · TPV total: ${fmtBRL(tpvUlt)}
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Funil de Conversão — ${mUlt.mes}</h3>
+        <div class="chart-sub">Taxas etapa a etapa (até 90 dias)</div>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+          ${funilSteps.map(s => `
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px">
+                <span style="color:var(--muted)">${s.label}</span>
+                <span style="font-weight:800">${s.rate.toFixed(1)}%</span>
+              </div>
+              <div class="step-bar-wrap">
+                <div class="step-bar-fill" style="background:${s.color};width:${Math.min(100,s.rate)}%"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="insights-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="insight-card ${deltaTc < -30 || deltaTd < -30 ? 'warn' : 'info'}">
+        <div class="insight-icon">💡</div>
+        <div>
+          <div class="insight-title">Possíveis Impactos</div>
+          <div class="insight-text">
+            • <strong>${pctStr(ativUlt,baseUlt)}</strong> dos renovados em <strong>${mUlt.mes}</strong> ativaram fisicamente nos 90 dias seguintes.<br>
+            • Spending TC <strong>${spendNote(deltaTc)}</strong><br>
+            • Spending TD <strong>${spendNote(deltaTd)}</strong><br>
+            • ${fmtN(desbUlt - ativUlt)} desbloqueados ainda não geraram transação física — oportunidade ativa de reengajamento.
+          </div>
+        </div>
+      </div>
+      <div class="insight-card info">
+        <div class="insight-icon">🔍</div>
+        <div>
+          <div class="insight-title">Hipóteses</div>
+          <div class="insight-text">
+            • Queda no spending pós-renovação pode refletir período de ativação do cartão novo (primeiros 30d sem uso recorrente).<br>
+            • ${tcUlt > tdUlt ? 'Maior volume de ativados TC vs TD — usuários preferem crédito como primeiro uso físico.' : 'TD supera TC em ativados — perfil transacional, débito como meio principal.'}<br>
+            • Taxa de desbloqueio de <strong>${pctStr(desbUlt,entUlt)}</strong> sobre entregues indica ${pctN(desbUlt,entUlt) >= 70 ? 'boa aderência pós-entrega.' : 'potencial de melhoria na comunicação pós-entrega.'}
+          </div>
+        </div>
+      </div>
+      <div class="insight-card good">
+        <div class="insight-icon">🚀</div>
+        <div>
+          <div class="insight-title">Sugestão de Novos Passos</div>
+          <div class="insight-text">
+            • Acionar campanha de ativação para os <strong>${fmtN(desbUlt - ativUlt)}</strong> desbloqueados sem transação física.<br>
+            • Investigar os <strong>${fmtN(baseUlt - entUlt)}</strong> renovados não entregues — verificar endereço desatualizado ou problema logístico.<br>
+            • Monitorar spending dos ativados de <strong>${mUlt.mes}</strong> no próximo mês para avaliar permanência do reengajamento.
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ── SECTION 3: Safra anterior com engajamento de ciclo ────────
+  const penBadge = document.getElementById('insights-pen-badge');
+  if (penBadge) penBadge.textContent = mPen.mes;
+
+  const basePen  = fdPen.base  || (mPen.ren + mPen.rei) || 0;
+  const ativPen  = getFunilAtivos(fdPen);
+  const tcPen    = fdPen.ativos_tc || 0;
+  const tdPen    = fdPen.ativos_td || 0;
+  const tpvTcPen = fdPen.tpv_tc || 0;
+  const tpvTdPen = fdPen.tpv_td || 0;
+  const tpvPen   = tpvTcPen + tpvTdPen;
+  const avgSpendPen = ativPen ? tpvPen/ativPen : 0;
+
+  const CK = ['c1','c2','c3','c4','c5','c6','c7'];
+  const CL = {c1:'C1 — Mensal-',c2:'C2 — Bimestral',c3:'C3 — Trimestral',c4:'C4 — Quadrimestral',c5:'C5 — Semestral',c6:'C6 — Anual+',c7:'C7 — Superativo'};
+  const CC = {c1:'#FFE600',c2:'#009EE3',c3:'#00A650',c4:'#7C3AED',c5:'#FF6B00',c6:'#FF3B30',c7:'#1A1A1A'};
+  const CS = {c1:'#333',c2:'#fff',c3:'#fff',c4:'#fff',c5:'#fff',c6:'#fff',c7:'#fff'};
+  const cicloTotal = CK.reduce((a,k) => a + (csPen[k]||0), 0);
+  const dominantK  = CK.reduce((best,k) => (csPen[k]||0) > (csPen[best]||0) ? k : best, 'c1');
+  const dominantPct= cicloTotal ? pctN(csPen[dominantK]||0, cicloTotal).toFixed(1) : '—';
+  const highEngCiclos = ['c6','c7'];
+  const highEngTotal = highEngCiclos.reduce((a,k) => a + (csPen[k]||0), 0);
+  const highEngPct   = cicloTotal ? pctN(highEngTotal, cicloTotal).toFixed(1) : '—';
+
+  const penContent = document.getElementById('insights-pen-content');
+  if (penContent) penContent.innerHTML = `
+    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="chart-card">
+        <h3>Distribuição por Ciclo de Uso — ${mPen.mes}</h3>
+        <div class="chart-sub">Elegíveis por frequência de uso antes da expiração</div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
+          ${CK.map(k => {
+            const qty   = csPen[k] || 0;
+            const share = cicloTotal ? pctN(qty, cicloTotal) : 0;
+            return `
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-size:10px;font-weight:800;color:var(--muted);width:26px">${k.toUpperCase()}</div>
+                <div class="hbar-wrap">
+                  <div class="hbar-fill" style="background:${CC[k]};width:${Math.min(100,share)}%">
+                    ${share >= 7 ? `<span style="color:${CS[k]}">${share.toFixed(0)}%</span>` : ''}
+                  </div>
+                </div>
+                <div style="font-size:11px;font-weight:700;min-width:46px;text-align:right">${fmtN(qty)}</div>
+                <div style="font-size:10px;color:var(--muted);min-width:36px">${share.toFixed(1)}%</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>KPIs de Ativação — ${mPen.mes}</h3>
+        <div class="chart-sub">Resultados pós-renovação (90 dias)</div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Base Renovada</div>
+            <div style="font-size:22px;font-weight:800">${fmtN(basePen)}</div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Ativados (TC ou TD)</div>
+            <div style="font-size:22px;font-weight:800;color:var(--orange)">${fmtN(ativPen)} <span style="font-size:13px;font-weight:600;color:var(--muted)">${pctStr(ativPen,basePen)}</span></div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Spending Médio / Ativo</div>
+            <div style="font-size:20px;font-weight:800;color:var(--green)">${fmtBRL(avgSpendPen)}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">TC ${fmtBRL(tcPen?tpvTcPen/tcPen:0)} · TD ${fmtBRL(tdPen?tpvTdPen/tdPen:0)}</div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Ciclo Dominante</div>
+            <div style="font-size:15px;font-weight:800">${dominantK.toUpperCase()} — ${dominantPct}% da safra</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">C6+C7 (alto engajamento): ${highEngPct}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insights-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="insight-card ${parseFloat(highEngPct) >= 40 ? 'good' : 'info'}">
+        <div class="insight-icon">💡</div>
+        <div>
+          <div class="insight-title">Possíveis Impactos</div>
+          <div class="insight-text">
+            • Ciclo dominante <strong>${dominantK.toUpperCase()}</strong> (${dominantPct}%) indica ${dominantK==='c6'||dominantK==='c7' ? 'perfil de alto engajamento — clientes premium com maior potencial de TPV.' : dominantK==='c1' ? 'perfil mensal — clientes com engajamento moderado e ciclo curto de compra.' : 'perfil intermediário de uso.'}<br>
+            • <strong>${highEngPct}%</strong> da safra nos ciclos C6/C7 (mais frequentes) — tendência de ${parseFloat(highEngPct) >= 40 ? 'base premium concentrada.' : 'base mista, com oportunidade de estimular frequência.'}<br>
+            • <strong>${fmtN(basePen - ativPen)}</strong> renovados (${pctStr(basePen-ativPen,basePen)}) sem transação física — oportunidade de reativação segmentada por ciclo.
+          </div>
+        </div>
+      </div>
+      <div class="insight-card info">
+        <div class="insight-icon">🔍</div>
+        <div>
+          <div class="insight-title">Hipóteses</div>
+          <div class="insight-text">
+            • Clientes C6/C7 tendem a ativar mais rápido após renovação — foco de comunicação nos primeiros 30d pode elevar conversão nos ciclos C1–C3.<br>
+            • A concentração no ciclo ${dominantK.toUpperCase()} pode refletir sazonalidade de vencimentos ou segmento de produto (Híbrido vs Débito Puro).<br>
+            • Correlacionar ciclo vs taxa de ativação individual permitiria confirmar se ciclos de maior frequência geram spending significativamente superior.
+          </div>
+        </div>
+      </div>
+      <div class="insight-card good">
+        <div class="insight-icon">🚀</div>
+        <div>
+          <div class="insight-title">Sugestão de Novos Passos</div>
+          <div class="insight-text">
+            • Segmentar campanha por ciclo: C1–C3 com oferta de cashback no 1º uso; C6–C7 com benefício de fidelidade para manter padrão de gasto.<br>
+            • Cruzar os <strong>${fmtN(basePen - ativPen)}</strong> inativos com dados de atendimento — identificar bloqueio operacional ou falta de comunicação pós-entrega.<br>
+            • Avaliar se ciclos de menor frequência têm SLA de entrega mais longo — correlação entrega tardia × menor ativação.
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ── SLIDE: atualizar insights dinâmicos ───────────────────────
+  const slideRow = document.getElementById('slide-insights-dynamic');
+  if (slideRow) slideRow.innerHTML = `
+    <div class="slide-insight">
+      <strong>Resumo Geral</strong>
+      ${fmtN(totalAtiv)} ativados de ${fmtN(totalBase)} renovados (${taxaAtivGeral.toFixed(1)}% de conversão). SLA médio: ${avgDm}d. TPV acumulado: ${fmtBRL(totalTpv)}.
+    </div>
+    <div class="slide-insight">
+      <strong>${mUlt.mes} — Última Safra</strong>
+      ${fmtN(ativUlt)} ativados (${pctStr(ativUlt,baseUlt)}). Spending TC ${deltaStr(deltaTc)} pós-renovação. ${fmtN(desbUlt - ativUlt)} desbloqueados sem transação física — reengajamento pendente.
+    </div>
+    <div class="slide-insight">
+      <strong>${mPen.mes} — Engajamento por Ciclo</strong>
+      Ciclo dominante: ${dominantK.toUpperCase()} (${dominantPct}%). C6+C7 (alto engajamento): ${highEngPct}% da safra. ${fmtN(basePen - ativPen)} inativos — oportunidade de reativação segmentada.
+    </div>
+  `;
+}
+
 // ── INIT ──────────────────────────────────────────────────────
 buildFilters();
 buildSumario();
@@ -3773,6 +4190,7 @@ initCharts();
 updateKPIs();
 buildTable();
 buildSlide();
+buildInsights();
 
 // ── TAB SWITCHING ─────────────────────────────────────────────
 function switchTab(id) {
