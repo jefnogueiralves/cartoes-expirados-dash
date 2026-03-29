@@ -1236,23 +1236,16 @@
       <div class="chart-card">
         <h3>Spending Médio TC por Usuário</h3>
         <div class="chart-sub">R$/usuário ativo TC · antes = tpv_tc/base · depois = tpv_tc/ativos_tc</div>
-        <div class="chart-wrap" style="height:280px">
+        <div class="chart-wrap" style="height:360px">
           <canvas id="chartSpendTlTc"></canvas>
         </div>
       </div>
       <div class="chart-card">
         <h3>Spending Médio TD por Usuário</h3>
         <div class="chart-sub">R$/usuário ativo TD · antes = tpv_td/base · depois = tpv_td/ativos_td</div>
-        <div class="chart-wrap" style="height:280px">
+        <div class="chart-wrap" style="height:360px">
           <canvas id="chartSpendTlTd"></canvas>
         </div>
-      </div>
-    </div>
-    <div class="chart-card" style="margin-top:16px">
-      <h3>Spending Médio Total (TC+TD) por Usuário</h3>
-      <div class="chart-sub">R$/renovado ativo · (tpv_tc+tpv_td)/ativados · queda e recuperação por safra</div>
-      <div class="chart-wrap" style="height:300px">
-        <canvas id="chartSpendTlTotal"></canvas>
       </div>
     </div>
 
@@ -2941,9 +2934,8 @@ function buildSpendingTimeline() {
 
   // ── SPENDING MÉDIO POR USUÁRIO ─────────────────────────────
   const spendChartIds = [
-    {id:'chartSpendTlTc',    tcKey:true,  tdKey:false, atvFn: d=>d.ativos_tc||1},
-    {id:'chartSpendTlTd',    tcKey:false, tdKey:true,  atvFn: d=>d.ativos_td||1},
-    {id:'chartSpendTlTotal', tcKey:true,  tdKey:true,  atvFn: d=>getFunilAtivos(d)||1},
+    {id:'chartSpendTlTc', tcKey:true,  tdKey:false, atvFn: d=>d.ativos_tc||1},
+    {id:'chartSpendTlTd', tcKey:false, tdKey:true,  atvFn: d=>d.ativos_td||1},
   ];
   spendChartIds.forEach(({id, tcKey, tdKey, atvFn}) => {
     const el = document.getElementById(id);
