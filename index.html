@@ -2079,7 +2079,7 @@ function initCharts() {
         {label:'Renovados',     data:D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]), backgroundColor:'rgba(0,158,227,.5)', borderColor:'#009EE3', borderWidth:1.5, borderRadius:3},
         {label:'Entregue',      data:D.meses.map(m=>{const s=mesToSafra(m); const fd=_funilFdMap(m); return getFunilEntregue(s,fd);}), backgroundColor:'rgba(0,166,80,.5)', borderColor:'#00A650', borderWidth:1.5, borderRadius:3},
         {label:'Desbloqueados', data:D.meses.map(m=>{const fd=_funilFdMap(m); return fd?(fd.ativados||0):0;}), backgroundColor:'rgba(124,58,237,.5)', borderColor:'#7C3AED', borderWidth:1.5, borderRadius:3},
-        {label:'Ativados',      data:D.meses.map(m=>{const fd=_funilFdMap(m); return fd?((fd.ativos_tc||0)+(fd.ativos_td||0)):0;}), backgroundColor:'rgba(255,107,0,.5)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
+        {label:'Ativados',      data:D.meses.map(m=>getFunilAtivos(_funilFdMap(m))), backgroundColor:'rgba(255,107,0,.5)', borderColor:'#FF6B00', borderWidth:1.5, borderRadius:3},
       ]
     },
     options:{responsive:true, maintainAspectRatio:false,
@@ -2109,7 +2109,7 @@ function initCharts() {
   });
   const _fpPctAtiv = D.meses.map(m => {
     const fd=_funilFdMap(m);
-    const d=fd?(fd.ativados||0):0, a=fd?((fd.ativos_tc||0)+(fd.ativos_td||0)):0;
+    const d=fd?(fd.ativados||0):0, a=getFunilAtivos(fd);
     return d ? +(a/d*100).toFixed(1) : 0;
   });
   charts.funilPct = new Chart(document.getElementById('chartFunilPct'), {
@@ -2128,7 +2128,7 @@ function initCharts() {
         datalabels:{anchor:'end',align:'top',color:'#555',font:{size:8,weight:'bold'},formatter:v=>v+'%'}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:10}}},
-        y:{beginAtZero:true,max:110,ticks:{callback:v=>v+'%',font:{size:10}},grid:{display:false}},
+        y:{beginAtZero:true,suggestedMax:120,ticks:{callback:v=>v+'%',font:{size:10}},grid:{display:false}},
       }
     }
   });
@@ -3106,7 +3106,7 @@ function updateCharts() {
     charts.funil.data.datasets[1].data = D.meses.map((_,i)=>D.renovacoes[i]+D.reemissoes[i]);
     charts.funil.data.datasets[2].data = D.meses.map(m=>{const s=mesToSafra(m); return getFunilEntregue(s,_ffMap(m));});
     charts.funil.data.datasets[3].data = D.meses.map(m=>{const fd=_ffMap(m); return fd?(fd.ativados||0):0;});
-    charts.funil.data.datasets[4].data = D.meses.map(m=>{const fd=_ffMap(m); return fd?((fd.ativos_tc||0)+(fd.ativos_td||0)):0;});
+    charts.funil.data.datasets[4].data = D.meses.map(m=>getFunilAtivos(_ffMap(m)));
     charts.funil.update();
   }
 
@@ -3117,7 +3117,7 @@ function updateCharts() {
     const upSol  = D.meses.map((_,i)=>D.elegiveis[i]?+((D.renovacoes[i]+D.reemissoes[i])/D.elegiveis[i]*100).toFixed(1):0);
     const upEnt  = D.meses.map(m=>{const fd=_ffMap2(m); const mo=MONTHLY.find(x=>x.mes===m); const s=mo?mo.ren+mo.rei:0; const e=getFunilEntregue(mesToSafra(m),fd); return s?+(e/s*100).toFixed(1):0;});
     const upDesb = D.meses.map(m=>{const fd=_ffMap2(m); const e=getFunilEntregue(mesToSafra(m),fd); const d=fd?(fd.ativados||0):0; return e?+(d/e*100).toFixed(1):0;});
-    const upAtiv = D.meses.map(m=>{const fd=_ffMap2(m); const d=fd?(fd.ativados||0):0; const a=fd?((fd.ativos_tc||0)+(fd.ativos_td||0)):0; return d?+(a/d*100).toFixed(1):0;});
+    const upAtiv = D.meses.map(m=>{const fd=_ffMap2(m); const d=fd?(fd.ativados||0):0; const a=getFunilAtivos(fd); return d?+(a/d*100).toFixed(1):0;});
     charts.funilPct.data.datasets[0].data = upSol;
     charts.funilPct.data.datasets[1].data = upEnt;
     charts.funilPct.data.datasets[2].data = upDesb;
@@ -3608,6 +3608,17 @@ function mesToSafra(mes) {
 }
 
 // ── FUNIL VISUAL ──────────────────────────────────────────────
+// Retorna qtde ativados dedupliciados: ativos_tc + ativos_td - ativos_ambos,
+// nunca excedendo ativados (QTDE_DESBLOQUEADO) para evitar taxa >100%.
+function getFunilAtivos(fd) {
+  if (!fd) return 0;
+  const tc   = fd.ativos_tc   || 0;
+  const td   = fd.ativos_td   || 0;
+  const amb  = fd.ativos_ambos|| 0;
+  const desb = fd.ativados    || 0;
+  return Math.min(tc + td - amb, desb);
+}
+
 // Retorna qtde entregue para uma safra — usa fd.entregue se disponível,
 // senão soma ENTREGA_CICLO[safra][ciclo].entregue como fallback.
 function getFunilEntregue(safra, fd) {
