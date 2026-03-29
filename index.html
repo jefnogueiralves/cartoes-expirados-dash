@@ -2237,22 +2237,22 @@ function buildCicloSafraTable() {
   const thLeft = 'padding:8px 12px;text-align:left;white-space:nowrap;font-size:10px;text-transform:uppercase;letter-spacing:.3px;';
 
   // Linha 1: cabeçalhos dos ciclos (colspan=2 cada)
-  let h1 = `<tr style="background:#0a1422;">
-    <th rowspan="2" style="${thLeft}border-bottom:2px solid #1e2d45;color:#94a3b8">Safra Exp.</th>
-    <th rowspan="2" style="${thBase}border-bottom:2px solid #1e2d45;color:#818cf8"># Expirados</th>
-    <th rowspan="2" style="${thBase}border-bottom:2px solid #1e2d45;color:#f1f5f9;font-weight:800">Renovados</th>`;
+  let h1 = `<tr style="background:#1e293b;">
+    <th rowspan="2" style="${thLeft}border-bottom:2px solid #334155;color:#94a3b8">Safra Exp.</th>
+    <th rowspan="2" style="${thBase}border-bottom:2px solid #334155;color:#93c5fd"># Expirados</th>
+    <th rowspan="2" style="${thBase}border-bottom:2px solid #334155;color:#f1f5f9;font-weight:800">Renovados</th>`;
   CICLOS_DEF.forEach((c, i) => {
-    const bl = (i === 5) ? 'border-left:2px solid #3a1e1e;' : (i === 0 ? 'border-left:2px solid #1e3a2f;' : '');
-    h1 += `<th colspan="2" style="${thBase}${bl}color:${c.col};background:rgba(${c.rgb},.06);border-bottom:1px solid #1e2d45;border-right:1px dashed #1e2d45">${c.label}</th>`;
+    const bl = (i === 5) ? 'border-left:2px solid #fca5a5;' : (i === 0 ? 'border-left:2px solid #86efac;' : '');
+    h1 += `<th colspan="2" style="${thBase}${bl}color:${c.col};background:rgba(${c.rgb},.15);border-bottom:1px solid #334155;border-right:1px dashed #334155">${c.label}</th>`;
   });
   h1 += `</tr>`;
 
   // Linha 2: % Conv e Share por ciclo
-  let h2 = `<tr style="background:#080f1c;">`;
+  let h2 = `<tr style="background:#1e293b;">`;
   CICLOS_DEF.forEach((c, i) => {
-    const bl = (i === 5) ? 'border-left:2px solid #3a1e1e;' : (i === 0 ? 'border-left:2px solid #1e3a2f;' : '');
-    h2 += `<th style="${thBase}${bl}color:${c.col};border-bottom:2px solid #1e2d45;font-size:9px;padding:4px 6px">% Conv</th>`;
-    h2 += `<th style="${thBase}color:#64748b;border-bottom:2px solid #1e2d45;font-size:9px;padding:4px 6px;border-right:1px dashed #1e2d45">Share</th>`;
+    const bl = (i === 5) ? 'border-left:2px solid #fca5a5;' : (i === 0 ? 'border-left:2px solid #86efac;' : '');
+    h2 += `<th style="${thBase}${bl}color:${c.col};border-bottom:2px solid #334155;font-size:9px;padding:4px 6px">% Conv</th>`;
+    h2 += `<th style="${thBase}color:#94a3b8;border-bottom:2px solid #334155;font-size:9px;padding:4px 6px;border-right:1px dashed #334155">Share</th>`;
   });
   h2 += `</tr>`;
   thead.innerHTML = h1 + h2;
@@ -2290,52 +2290,51 @@ function buildCicloSafraTable() {
     return { mo, g1, totalRnv, ciclo, cicloData };
   });
 
-  // ── Linhas de dados (ordem reversa = mais recente primeiro) ─
+  // ── Linhas de dados ──────────────────────────────────────────
   rows.forEach((row, chronIdx) => {
     const { mo, g1, totalRnv, ciclo, cicloData } = row;
     const isInc = !mo.completo;
-    // linha anterior cronologicamente (para seta de tendência)
     const prevCicloData = chronIdx > 0 ? rows[chronIdx - 1].cicloData : null;
+    const rowBg = chronIdx % 2 === 0 ? '#f8fafc' : '#fff';
 
     let cicloHtml = '';
     if (ciclo) {
       CICLOS_DEF.forEach((cd, i) => {
         const { val, pctConv, share } = cicloData[cd.k] || { val:0, pctConv:0, share:0 };
-        const alpha   = Math.min(0.5, Math.max(0.05, share / 40));
+        const alpha   = Math.min(0.25, Math.max(0.04, share / 40));
         const bg      = `rgba(${cd.rgb},${alpha.toFixed(2)})`;
-        const bl      = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
+        const bl      = (i===5) ? 'border-left:2px solid #fca5a5;' : (i===0 ? 'border-left:2px solid #86efac;' : '');
         const convTxt = pctConv > 0 ? pctConv.toFixed(1)+'%' : '—';
 
-        // seta de tendência do share vs safra anterior
         let arrow = '';
         if (prevCicloData && prevCicloData[cd.k] !== undefined) {
           const prevShare = prevCicloData[cd.k].share;
           const diff = share - prevShare;
-          if (diff > 0.5)       arrow = '<span style="color:#4ade80;font-size:9px;margin-left:2px">↑</span>';
-          else if (diff < -0.5) arrow = '<span style="color:#f87171;font-size:9px;margin-left:2px">↓</span>';
-          else                  arrow = '<span style="color:#64748b;font-size:9px;margin-left:2px">→</span>';
+          if (diff > 0.5)       arrow = '<span style="color:#16a34a;font-size:9px;margin-left:2px">↑</span>';
+          else if (diff < -0.5) arrow = '<span style="color:#dc2626;font-size:9px;margin-left:2px">↓</span>';
+          else                  arrow = '<span style="color:#94a3b8;font-size:9px;margin-left:2px">→</span>';
         }
 
         const shareTxt = share > 0.05 ? share.toFixed(1)+'%' : '—';
-        cicloHtml += `<td style="${tdBase}${bl}background:${bg};color:${cd.col};font-weight:700">${convTxt}</td>`;
-        cicloHtml += `<td style="${tdBase}background:${bg};color:#94a3b8;border-right:1px dashed #1e2d45">${shareTxt}${arrow}</td>`;
+        cicloHtml += `<td style="${tdBase}${bl}background:${bg};color:#1e293b;font-weight:700">${convTxt}</td>`;
+        cicloHtml += `<td style="${tdBase}background:${bg};color:#475569;border-right:1px dashed #cbd5e1">${shareTxt}${arrow}</td>`;
       });
     } else {
       CICLOS_DEF.forEach((cd, i) => {
-        const bl = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
-        cicloHtml += `<td style="${tdBase}${bl}color:#334155;background:#0a1628">—</td>`;
-        cicloHtml += `<td style="${tdBase}color:#334155;background:#0a1628;border-right:1px dashed #1e2d45">—</td>`;
+        const bl = (i===5) ? 'border-left:2px solid #fca5a5;' : (i===0 ? 'border-left:2px solid #86efac;' : '');
+        cicloHtml += `<td style="${tdBase}${bl}color:#cbd5e1;background:${rowBg}">—</td>`;
+        cicloHtml += `<td style="${tdBase}color:#cbd5e1;background:${rowBg};border-right:1px dashed #cbd5e1">—</td>`;
       });
     }
 
     const tr = document.createElement('tr');
-    tr.style.cssText = 'border-bottom:1px solid #1e2d45;transition:background .15s;background:#0a1628;';
-    tr.onmouseenter = function() { this.style.background = '#0f1e38'; };
-    tr.onmouseleave = function() { this.style.background = '#0a1628'; };
+    tr.style.cssText = `border-bottom:1px solid #e2e8f0;transition:background .15s;background:${rowBg};`;
+    tr.onmouseenter = function() { this.style.background = '#eff6ff'; };
+    tr.onmouseleave = function() { this.style.background = rowBg; };
     tr.innerHTML = `
-      <td style="padding:7px 12px;font-weight:700;color:${isInc?'#fbbf24':'#93c5fd'};white-space:nowrap;border-right:1px solid #1e2d45">${mo.mes}</td>
-      <td style="${tdBase}color:#a5b4fc">${fmt(g1)}</td>
-      <td style="${tdBase}font-weight:700;color:#f1f5f9">${fmt(totalRnv)}</td>
+      <td style="padding:7px 12px;font-weight:700;color:${isInc?'#d97706':'#2563eb'};white-space:nowrap;border-right:1px solid #e2e8f0;background:${rowBg}">${mo.mes}</td>
+      <td style="${tdBase}color:#6366f1;font-weight:600;background:${rowBg}">${fmt(g1)}</td>
+      <td style="${tdBase}font-weight:700;color:#1e293b;background:${rowBg}">${fmt(totalRnv)}</td>
       ${cicloHtml}
     `;
     tbody.appendChild(tr);
@@ -2343,21 +2342,21 @@ function buildCicloSafraTable() {
 
   // ── Linha TOTAL ─────────────────────────────────────────────
   const trTot = document.createElement('tr');
-  trTot.style.cssText = 'background:#060e1c;font-weight:700;border-top:2px solid #1e2d45;';
+  trTot.style.cssText = 'background:#f1f5f9;font-weight:700;border-top:2px solid #94a3b8;';
   let totCicloHtml = '';
   CICLOS_DEF.forEach((cd, i) => {
-    const bl          = (i===5) ? 'border-left:2px solid #3a1e1e;' : (i===0 ? 'border-left:2px solid #1e3a2f;' : '');
+    const bl          = (i===5) ? 'border-left:2px solid #fca5a5;' : (i===0 ? 'border-left:2px solid #86efac;' : '');
     const sumVal      = totValByCiclo[cd.k];
     const sumRen      = totRenByCiclo[cd.k];
     const totPctConv  = totAll > 0 ? (sumRen / totAll * 100).toFixed(1)+'%' : '—';
     const totShare    = totTelG1 > 0 ? (sumVal / totTelG1 * 100).toFixed(1)+'%' : '—';
-    totCicloHtml += `<td style="${tdBase}${bl}color:${cd.col};font-weight:700">${totPctConv}</td>`;
-    totCicloHtml += `<td style="${tdBase}color:#94a3b8;border-right:1px dashed #1e2d45">${totShare}</td>`;
+    totCicloHtml += `<td style="${tdBase}${bl}color:#1e293b;font-weight:700;background:#f1f5f9">${totPctConv}</td>`;
+    totCicloHtml += `<td style="${tdBase}color:#475569;border-right:1px dashed #cbd5e1;background:#f1f5f9">${totShare}</td>`;
   });
   trTot.innerHTML = `
-    <td style="padding:7px 10px;color:#f1f5f9;font-weight:800">TOTAL</td>
-    <td style="${tdBase}color:#a5b4fc">${fmt(totTelG1)}</td>
-    <td style="${tdBase}color:#f1f5f9">${fmt(totAll)}</td>
+    <td style="padding:7px 10px;color:#1e293b;font-weight:800;background:#f1f5f9">TOTAL</td>
+    <td style="${tdBase}color:#6366f1;font-weight:800;background:#f1f5f9">${fmt(totTelG1)}</td>
+    <td style="${tdBase}color:#1e293b;font-weight:800;background:#f1f5f9">${fmt(totAll)}</td>
     ${totCicloHtml}
   `;
   tbody.appendChild(trTot);
