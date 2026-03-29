@@ -2816,7 +2816,21 @@ function buildFaixaDiasChart() {
 function buildSpendingTimeline() {
   const X   = ['-6','-5','-4','-3','-2','-1','0','+1','+2','+3','+4','+5','+6'];
   const OFF = [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-  const palette = ['#6366f1','#22d3ee','#4ade80','#facc15','#f97316','#e879f9','#f43f5e','#34d399','#a78bfa','#fb923c','#38bdf8','#a3e635'];
+  // Paleta por safra: antigas → cinza claro · médias → cinza escuro · recentes → azul
+  const palette = [
+    '#94a3b8', // Abr/25 – cinza claro (antiga)
+    '#7e8ea4', // Mai/25
+    '#6b7b93', // Jun/25
+    '#57657c', // Jul/25
+    '#475569', // Ago/25 – cinza médio
+    '#3d4b5e', // Set/25
+    '#334155', // Out/25
+    '#263244', // Nov/25 – cinza escuro
+    '#93c5fd', // Dez/25 – azul claro (recente)
+    '#60a5fa', // Jan/26
+    '#3b82f6', // Fev/26
+    '#1d4ed8', // Mar/26* – azul intenso (mais recente)
+  ];
 
   // plugin inline para linha vertical no mes de expiracao (indice 6)
   const vline = {
